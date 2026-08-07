@@ -6,6 +6,7 @@ import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 import { SchoolModule } from './modules/school/school.module';
 import { RbacModule } from './modules/rbac/rbac.module';
+import { PeopleModule } from './modules/people/people.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { RbacModule } from './modules/rbac/rbac.module';
     HealthModule,
     SchoolModule,
     RbacModule,
+    PeopleModule,
   ],
   controllers: [AppController],
   providers: [AppService],
