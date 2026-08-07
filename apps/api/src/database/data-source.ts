@@ -3,7 +3,7 @@ import { DataSource } from 'typeorm';
 
 config();
 
-export const dataSource = new DataSource({
+export default new DataSource({
   type: 'mysql',
   host: process.env.DB_HOST ?? 'localhost',
   port: Number(process.env.DB_PORT ?? 3306),
@@ -14,5 +14,3 @@ export const dataSource = new DataSource({
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
   charset: 'utf8mb4',
 });
-
-export default dataSource;
