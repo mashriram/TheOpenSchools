@@ -1,0 +1,21 @@
+{
+  "name": "@purpleschools/gibbon-migrator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "One-shot ETL CLI that imports a school's Gibbon MySQL data into PurpleSchools",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "migrate": "tsx src/bin.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo \"no lint configured for gibbon-migrator\""
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "tsx": "^4.23.8",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.10"
+  }
+}

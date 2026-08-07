@@ -1,0 +1,21 @@
+{
+  "name": "purpleschools",
+  "private": true,
+  "version": "0.1.0",
+  "description": "PurpleSchools: a Next.js + NestJS + TypeORM reimplementation of Gibbon",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@11.20.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0",
+    "typescript": "^5.7.0"
+  }
+}
