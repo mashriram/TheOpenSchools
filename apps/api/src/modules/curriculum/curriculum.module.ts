@@ -63,6 +63,15 @@ import { UnitsController } from './units.controller';
     CourseClassesRepository,
     CourseClassPeopleRepository,
     UnitsRepository,
+    // Tier 2 modules that nest under a course/class path param (Markbook's
+    // MarkbookColumnsService, and Attendance-by-class later) need
+    // CourseClassesService.getOwned() for the same 404-on-cross-tenant
+    // ownership check Curriculum's own controllers use internally, not just
+    // the raw repositories.
+    CoursesService,
+    CourseClassesService,
+    CourseEnrolmentService,
+    UnitsService,
   ],
 })
 export class CurriculumModule {}

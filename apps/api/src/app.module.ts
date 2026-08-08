@@ -18,6 +18,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
 import { CurriculumModule } from './modules/curriculum/curriculum.module';
 import { TimetableModule } from './modules/timetable/timetable.module';
+import { MarkbookModule } from './modules/markbook/markbook.module';
 import { RequestContextInterceptor } from './common/request-context.interceptor';
 
 @Module({
@@ -32,6 +33,7 @@ import { RequestContextInterceptor } from './common/request-context.interceptor'
     ComplianceModule,
     CurriculumModule,
     TimetableModule,
+    MarkbookModule,
   ],
   controllers: [AppController],
   providers: [
