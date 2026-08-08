@@ -16,6 +16,7 @@ import { RbacModule } from './modules/rbac/rbac.module';
 import { PeopleModule } from './modules/people/people.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
+import { CurriculumModule } from './modules/curriculum/curriculum.module';
 import { RequestContextInterceptor } from './common/request-context.interceptor';
 
 @Module({
@@ -28,6 +29,7 @@ import { RequestContextInterceptor } from './common/request-context.interceptor'
     PeopleModule,
     AuthModule,
     ComplianceModule,
+    CurriculumModule,
   ],
   controllers: [AppController],
   providers: [

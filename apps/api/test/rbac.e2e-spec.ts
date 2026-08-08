@@ -15,6 +15,7 @@ import { PlatformModulesRepository } from '../src/modules/rbac/repositories/plat
 import { SchoolModuleEnablementsRepository } from '../src/modules/rbac/repositories/school-module-enablements.repository';
 import { RbacCatalogSeeder } from '../src/modules/rbac/seed/rbac-catalog-seeder';
 import { FOUNDATION_RBAC_CATALOG } from '../src/modules/rbac/seed/foundation-rbac-catalog';
+import { CURRICULUM_RBAC_CATALOG } from '../src/modules/curriculum/curriculum-rbac-catalog';
 import { HashingService } from '../src/modules/auth/hashing.service';
 
 const PASSWORD = 'correct-horse-battery-staple';
@@ -217,17 +218,17 @@ describe('RBAC (e2e)', () => {
 
   /**
    * The real Gibbon-grounded default-permission flags, straight from the
-   * catalog signup (M7) actually seeds Permissions from - not a hand-picked
-   * subset. This is the "hand-computed grant" the parity test below checks
-   * /me/abilities against, for every one of Foundation's real actions.
+   * catalogs signup (M7, then M14's curriculum catalog) actually seeds
+   * Permissions from - not a hand-picked subset. This is the
+   * "hand-computed grant" the parity test below checks /me/abilities
+   * against, for every real action across every catalog RbacModule seeds.
    */
   function expectedGrantsForSlot(
     slot: keyof typeof SLOT_DEFAULT_PERMISSION_FLAG,
   ): string[] {
     const flag = SLOT_DEFAULT_PERMISSION_FLAG[slot];
-    return FOUNDATION_RBAC_CATALOG.flatMap(
-      (platformModule) => platformModule.actions,
-    )
+    return [...FOUNDATION_RBAC_CATALOG, ...CURRICULUM_RBAC_CATALOG]
+      .flatMap((platformModule) => platformModule.actions)
       .filter((action) => action[flag])
       .map((action) => `${action.verb}:${action.subject}`)
       .sort();

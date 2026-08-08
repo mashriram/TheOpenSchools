@@ -11,10 +11,12 @@ import { RolesRepository } from './repositories/roles.repository';
 import { PermissionsRepository } from './repositories/permissions.repository';
 import { SchoolModuleEnablementsRepository } from './repositories/school-module-enablements.repository';
 import { RbacCatalogSeeder } from './seed/rbac-catalog-seeder';
+import { FOUNDATION_RBAC_CATALOG } from './seed/foundation-rbac-catalog';
 import { CaslAbilityFactory } from './casl-ability.factory';
 import { PoliciesGuard } from './policies.guard';
 import { RbacService } from './rbac.service';
 import { RbacController } from './rbac.controller';
+import { CURRICULUM_RBAC_CATALOG } from '../curriculum/curriculum-rbac-catalog';
 
 @Module({
   imports: [
@@ -63,7 +65,13 @@ export class RbacModule implements OnModuleInit {
   // module's own integration specs) does NOT trigger onModuleInit - only
   // `.init()` does - so those tests are unaffected and keep seeding their
   // own ad hoc fixtures.
+  //
+  // Every Tier 2 milestone adds its own catalog file and appends it to this
+  // array - the sanctioned extension point for future milestones.
   async onModuleInit(): Promise<void> {
-    await this.rbacCatalogSeeder.seedCatalog();
+    await this.rbacCatalogSeeder.seedCatalog([
+      ...FOUNDATION_RBAC_CATALOG,
+      ...CURRICULUM_RBAC_CATALOG,
+    ]);
   }
 }
