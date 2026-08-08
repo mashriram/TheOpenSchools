@@ -46,6 +46,10 @@ import { RbacController } from './rbac.controller';
     SchoolModuleEnablementsRepository,
     RbacCatalogSeeder,
     CaslAbilityFactory,
+    // M3's School Admin controllers live in SchoolModule, not here, but
+    // still need PoliciesGuard for their own @UseGuards() - exporting it
+    // is what lets a controller outside this module resolve it via DI.
+    PoliciesGuard,
   ],
 })
 export class RbacModule implements OnModuleInit {

@@ -12,3 +12,9 @@ export type SchoolYearStatus = (typeof SCHOOL_YEAR_STATUSES)[number];
  * middle only, 2-63 characters (RFC 1035 label length limit).
  */
 export const SUBDOMAIN_SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+
+export const DEPARTMENT_TYPES = ['LearningArea', 'Administration'] as const;
+export type DepartmentType = (typeof DEPARTMENT_TYPES)[number];
+
+export const FORM_GROUP_STAFF_ROLES = ['Tutor', 'LearningAssistant'] as const;
+export type FormGroupStaffRole = (typeof FORM_GROUP_STAFF_ROLES)[number];

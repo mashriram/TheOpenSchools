@@ -3,6 +3,7 @@ import type { PersonGender, PersonStatus } from '@purpleschools/shared-types';
 import { SoftDeletableEntity } from '../../../common/soft-deletable.entity';
 import { School } from '../../school/entities/school.entity';
 import { SchoolYear } from '../../school/entities/school-year.entity';
+import { House } from '../../school/entities/house.entity';
 
 /**
  * Full 1:1 field parity with gibbonPerson, minus fields deferred until their
@@ -11,9 +12,10 @@ import { SchoolYear } from '../../school/entities/school-year.entity';
  * designed yet) and fields normalized into child tables (phone1-4 ->
  * PersonPhone, emergency1/2 -> PersonEmergencyContact).
  *
- * `houseId` is a soft reference (plain column, no FK) - House doesn't exist
- * yet (it lands in M3); the real FK relation gets wired then, the same
- * pattern used for YearGroup.headOfYearPersonId while Person didn't exist.
+ * `houseId` was a soft reference (plain column, no FK) until M3 added House;
+ * it's a real FK now, the same way YearGroup.headOfYearPersonId is a real FK
+ * to Person as of M3 rather than the soft reference it would've needed to be
+ * had YearGroup been built before Person existed.
  */
 @Entity('people')
 @Index(['schoolId', 'email'], { unique: true })
@@ -109,7 +111,10 @@ export class Person extends SoftDeletableEntity {
   @Column({ type: 'varchar', length: 90, nullable: true })
   jobTitle: string | null;
 
-  /** Soft reference to House (M3) - no FK constraint until House exists. */
+  @ManyToOne(() => House, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'houseId' })
+  house: House | null;
+
   @Column({ type: 'varchar', length: 36, nullable: true })
   houseId: string | null;
 

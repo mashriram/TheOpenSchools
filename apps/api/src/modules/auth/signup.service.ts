@@ -1,6 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource, QueryFailedError, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { isDuplicateEntryError } from '../../common/duplicate-entry-error';
 import { SchoolsRepository } from '../school/repositories/schools.repository';
 import { School } from '../school/entities/school.entity';
 import { SchoolYear } from '../school/entities/school-year.entity';
@@ -13,6 +14,8 @@ import { Permission } from '../rbac/entities/permission.entity';
 import { SchoolModuleEnablement } from '../rbac/entities/school-module-enablement.entity';
 import { DEFAULT_ROLE_SEEDS } from '../rbac/seed/default-roles';
 import { getDefaultActionsForSlot } from '../rbac/seed/default-role-grants';
+import { Setting } from '../school/entities/setting.entity';
+import { buildDefaultSettings } from '../school/seed/default-settings';
 import { Person } from '../people/entities/person.entity';
 import { PersonCredential } from '../people/entities/person-credential.entity';
 import { PersonRole } from '../people/entities/person-role.entity';
@@ -26,27 +29,12 @@ interface SignupTransactionResult {
   adminRoleId: string;
 }
 
-/** MySQL's error code for a unique-index violation. */
-const DUPLICATE_ENTRY_ERROR_CODE = 'ER_DUP_ENTRY';
-
-function isDuplicateEntryError(error: unknown): boolean {
-  return (
-    error instanceof QueryFailedError &&
-    (error.driverError as { code?: string } | undefined)?.code ===
-      DUPLICATE_ENTRY_ERROR_CODE
-  );
-}
-
 /**
- * Ties M1 (School/SchoolYear) + M2 (RBAC catalog) + M4 (Person) + M5 (Auth)
- * + M6 (CASL) together: a real public signup, not an admin-seeded stub.
- * Everything from School creation through the first PersonRole grant is one
- * transaction - a failure partway through leaves no partial School behind.
- *
- * Deliberately does NOT seed default Settings rows yet (per the plan: that's
- * M3's Setting entity, which doesn't exist at this point in the build order -
- * M3 extends this method to seed them once it lands, rather than faking the
- * entity now).
+ * Ties M1 (School/SchoolYear) + M2 (RBAC catalog) + M3 (Setting) + M4
+ * (Person) + M5 (Auth) + M6 (CASL) together: a real public signup, not an
+ * admin-seeded stub. Everything from School creation through the first
+ * PersonRole grant is one transaction - a failure partway through leaves no
+ * partial School behind.
  */
 @Injectable()
 export class SignupService {
@@ -94,6 +82,7 @@ export class SignupService {
         const peopleRepo = manager.getRepository(Person);
         const credentialsRepo = manager.getRepository(PersonCredential);
         const personRolesRepo = manager.getRepository(PersonRole);
+        const settingsRepo = manager.getRepository(Setting);
 
         const school = await schoolsRepo.save(
           schoolsRepo.create({
@@ -131,6 +120,12 @@ export class SignupService {
           permissionsRepo,
           school.id,
           allActions,
+        );
+
+        await settingsRepo.save(
+          buildDefaultSettings(dto.schoolName, dto.adminEmail).map((seed) =>
+            settingsRepo.create({ schoolId: school.id, ...seed }),
+          ),
         );
 
         const person = await peopleRepo.save(
