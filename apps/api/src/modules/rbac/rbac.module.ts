@@ -17,6 +17,7 @@ import { PoliciesGuard } from './policies.guard';
 import { RbacService } from './rbac.service';
 import { RbacController } from './rbac.controller';
 import { CURRICULUM_RBAC_CATALOG } from '../curriculum/curriculum-rbac-catalog';
+import { TIMETABLE_RBAC_CATALOG } from '../timetable/timetable-rbac-catalog';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ export class RbacModule implements OnModuleInit {
     await this.rbacCatalogSeeder.seedCatalog([
       ...FOUNDATION_RBAC_CATALOG,
       ...CURRICULUM_RBAC_CATALOG,
+      ...TIMETABLE_RBAC_CATALOG,
     ]);
   }
 }

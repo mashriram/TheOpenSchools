@@ -17,6 +17,7 @@ import { PeopleModule } from './modules/people/people.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
 import { CurriculumModule } from './modules/curriculum/curriculum.module';
+import { TimetableModule } from './modules/timetable/timetable.module';
 import { RequestContextInterceptor } from './common/request-context.interceptor';
 
 @Module({
@@ -30,6 +31,7 @@ import { RequestContextInterceptor } from './common/request-context.interceptor'
     AuthModule,
     ComplianceModule,
     CurriculumModule,
+    TimetableModule,
   ],
   controllers: [AppController],
   providers: [

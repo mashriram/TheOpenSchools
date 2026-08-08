@@ -16,6 +16,7 @@ import { SchoolModuleEnablementsRepository } from '../src/modules/rbac/repositor
 import { RbacCatalogSeeder } from '../src/modules/rbac/seed/rbac-catalog-seeder';
 import { FOUNDATION_RBAC_CATALOG } from '../src/modules/rbac/seed/foundation-rbac-catalog';
 import { CURRICULUM_RBAC_CATALOG } from '../src/modules/curriculum/curriculum-rbac-catalog';
+import { TIMETABLE_RBAC_CATALOG } from '../src/modules/timetable/timetable-rbac-catalog';
 import { HashingService } from '../src/modules/auth/hashing.service';
 
 const PASSWORD = 'correct-horse-battery-staple';
@@ -227,7 +228,11 @@ describe('RBAC (e2e)', () => {
     slot: keyof typeof SLOT_DEFAULT_PERMISSION_FLAG,
   ): string[] {
     const flag = SLOT_DEFAULT_PERMISSION_FLAG[slot];
-    return [...FOUNDATION_RBAC_CATALOG, ...CURRICULUM_RBAC_CATALOG]
+    return [
+      ...FOUNDATION_RBAC_CATALOG,
+      ...CURRICULUM_RBAC_CATALOG,
+      ...TIMETABLE_RBAC_CATALOG,
+    ]
       .flatMap((platformModule) => platformModule.actions)
       .filter((action) => action[flag])
       .map((action) => `${action.verb}:${action.subject}`)
