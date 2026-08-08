@@ -1,7 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DatabaseModule } from '../../database/database.module';
 import { SchoolModule } from './school.module';
 import { PeopleModule } from '../people/people.module';
@@ -148,5 +152,22 @@ describe('YearGroupsService (integration)', () => {
     await service.remove(school.id, yearGroup.id);
 
     expect(await service.list(school.id)).toHaveLength(0);
+  });
+
+  it('rejects a duplicate year group name within the same school as a clean 409', async () => {
+    const school = await createSchool();
+    await service.create(school.id, {
+      name: 'Year 7',
+      shortName: 'Y7',
+      sequenceNumber: 7,
+    });
+
+    await expect(
+      service.create(school.id, {
+        name: 'Year 7',
+        shortName: 'Y7B',
+        sequenceNumber: 8,
+      }),
+    ).rejects.toThrow(ConflictException);
   });
 });

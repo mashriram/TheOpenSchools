@@ -7,6 +7,7 @@ import { SchoolModule } from './school.module';
 import { SchoolsRepository } from './repositories/schools.repository';
 import { SchoolYearsRepository } from './repositories/school-years.repository';
 import { SpacesRepository } from './repositories/spaces.repository';
+import { FormGroupsRepository } from './repositories/form-groups.repository';
 import { FormGroupsService } from './form-groups.service';
 
 describe('FormGroupsService (integration)', () => {
@@ -14,6 +15,7 @@ describe('FormGroupsService (integration)', () => {
   let schools: SchoolsRepository;
   let schoolYears: SchoolYearsRepository;
   let spaces: SpacesRepository;
+  let formGroups: FormGroupsRepository;
   let service: FormGroupsService;
   let createdSchoolIds: string[];
 
@@ -28,6 +30,7 @@ describe('FormGroupsService (integration)', () => {
 
     schools = module.get(SchoolsRepository);
     schoolYears = module.get(SchoolYearsRepository);
+    formGroups = module.get(FormGroupsRepository);
     spaces = module.get(SpacesRepository);
     service = module.get(FormGroupsService);
   });
@@ -167,7 +170,7 @@ describe('FormGroupsService (integration)', () => {
     ).rejects.toThrow(NotFoundException);
   });
 
-  it('soft-removes a form group', async () => {
+  it('soft-removes a form group (recoverable, not a hard DELETE)', async () => {
     const { school, schoolYear } = await createSchoolWithYear();
     const formGroup = await service.create(school.id, {
       schoolYearId: schoolYear.id,
@@ -180,5 +183,11 @@ describe('FormGroupsService (integration)', () => {
     expect(
       await service.listBySchoolYear(school.id, schoolYear.id),
     ).toHaveLength(0);
+    const withDeleted = await formGroups.findOne({
+      where: { id: formGroup.id },
+      withDeleted: true,
+    });
+    expect(withDeleted).not.toBeNull();
+    expect(withDeleted!.deletedAt).not.toBeNull();
   });
 });

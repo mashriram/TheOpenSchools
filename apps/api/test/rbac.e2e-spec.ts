@@ -393,6 +393,36 @@ describe('RBAC (e2e)', () => {
 
       expect(response.status).toBe(400);
     });
+
+    it('returns 404 for a syntactically-valid but nonexistent role id', async () => {
+      const { school, adminEmail } = await seedSchoolWithAdminAndTeacher();
+      const accessToken = await loginAs(school.subdomainSlug, adminEmail);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/rbac/roles/${randomUUID()}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ description: 'x' });
+
+      expect(response.status).toBe(404);
+    });
+
+    it('returns 404 for a role belonging to a different school', async () => {
+      const { school, adminRole } = await seedSchoolWithAdminAndTeacher();
+      void school;
+      const { school: otherSchool, adminEmail: otherAdminEmail } =
+        await seedSchoolWithAdminAndTeacher();
+      const otherAccessToken = await loginAs(
+        otherSchool.subdomainSlug,
+        otherAdminEmail,
+      );
+
+      const response = await request(app.getHttpServer())
+        .patch(`/rbac/roles/${adminRole.id}`)
+        .set('Authorization', `Bearer ${otherAccessToken}`)
+        .send({ description: 'x' });
+
+      expect(response.status).toBe(404);
+    });
   });
 
   describe('Role permissions bulk-set', () => {

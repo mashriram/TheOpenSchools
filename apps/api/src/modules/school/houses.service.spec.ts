@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { DatabaseModule } from '../../database/database.module';
 import { SchoolModule } from './school.module';
 import { SchoolsRepository } from './repositories/schools.repository';
@@ -102,12 +102,36 @@ describe('HousesService (integration)', () => {
     expect(await service.list(school.id)).toHaveLength(0);
   });
 
-  it('rejects a duplicate house name within the same school', async () => {
+  it('rejects a duplicate house name within the same school as a clean 409, not a raw DB error', async () => {
     const school = await createSchool();
     await service.create(school.id, { name: 'Griffindor', shortName: 'GRF' });
 
     await expect(
       service.create(school.id, { name: 'Griffindor', shortName: 'GR2' }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(ConflictException);
+    expect(await service.list(school.id)).toHaveLength(1);
+  });
+
+  it('rejects renaming a house to a name already used by another house at the same school', async () => {
+    const school = await createSchool();
+    await service.create(school.id, { name: 'Griffindor', shortName: 'GRF' });
+    const other = await service.create(school.id, {
+      name: 'Slytherin',
+      shortName: 'SLY',
+    });
+
+    await expect(
+      service.update(school.id, other.id, { name: 'Griffindor' }),
+    ).rejects.toThrow(ConflictException);
+  });
+
+  it('allows the same house name across two different schools', async () => {
+    const school = await createSchool();
+    const otherSchool = await createSchool();
+    await service.create(school.id, { name: 'Griffindor', shortName: 'GRF' });
+
+    await expect(
+      service.create(otherSchool.id, { name: 'Griffindor', shortName: 'GRF' }),
+    ).resolves.toBeDefined();
   });
 });

@@ -57,7 +57,7 @@ export class RbacService {
     const role = await this.getOwnedRole(schoolId, roleId);
     this.assertMutable(role);
 
-    await this.roles.remove(role);
+    await this.roles.softRemove(role);
   }
 
   async getRolePermissionActionIds(

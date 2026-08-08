@@ -211,6 +211,68 @@ describe('School Admin (e2e)', () => {
         true,
       );
     });
+
+    it('rejects an unauthenticated request with 401', async () => {
+      const response = await request(app.getHttpServer()).get(
+        '/school-admin/spaces',
+      );
+      expect(response.status).toBe(401);
+    });
+
+    it('is forbidden for a Teacher', async () => {
+      const { school } = await signUpAdmin();
+      const teacherAuth = await addTeacherLogin(school.id);
+
+      const response = await request(app.getHttpServer())
+        .post('/school-admin/spaces')
+        .set(teacherAuth)
+        .send({ name: 'Lab 1' });
+
+      expect(response.status).toBe(403);
+    });
+
+    it('rejects a payload missing a required field with 400', async () => {
+      const { auth } = await signUpAdmin();
+
+      const response = await request(app.getHttpServer())
+        .post('/school-admin/spaces')
+        .set(auth)
+        .send({ hasComputer: true });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('returns 404 updating a space from a different school', async () => {
+      const { auth } = await signUpAdmin();
+      const { auth: otherAuth } = await signUpAdmin();
+      const createResponse = await request(app.getHttpServer())
+        .post('/school-admin/spaces')
+        .set(auth)
+        .send({ name: 'Lab 1' });
+      const space = body<{ id: string }>(createResponse);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/school-admin/spaces/${space.id}`)
+        .set(otherAuth)
+        .send({ name: 'Hijacked' });
+
+      expect(response.status).toBe(404);
+    });
+
+    it('rejects a duplicate space name within the same school with 409', async () => {
+      const { auth } = await signUpAdmin();
+      await request(app.getHttpServer())
+        .post('/school-admin/spaces')
+        .set(auth)
+        .send({ name: 'Lab 1' });
+
+      const response = await request(app.getHttpServer())
+        .post('/school-admin/spaces')
+        .set(auth)
+        .send({ name: 'Lab 1' });
+
+      expect(response.status).toBe(409);
+    });
   });
 
   describe('Departments', () => {

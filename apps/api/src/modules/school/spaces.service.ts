@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { isDuplicateEntryError } from '../../common/duplicate-entry-error';
 import { SpacesRepository } from './repositories/spaces.repository';
 import { Space } from './entities/space.entity';
 import { CreateSpaceDto } from './dto/create-space.dto';
@@ -13,7 +18,16 @@ export class SpacesService {
   }
 
   async create(schoolId: string, dto: CreateSpaceDto): Promise<Space> {
-    return this.spaces.save(this.spaces.create({ schoolId, ...dto }));
+    try {
+      return await this.spaces.save(this.spaces.create({ schoolId, ...dto }));
+    } catch (error) {
+      if (isDuplicateEntryError(error)) {
+        throw new ConflictException(
+          `A space named "${dto.name}" already exists at this school`,
+        );
+      }
+      throw error;
+    }
   }
 
   async update(
@@ -23,7 +37,16 @@ export class SpacesService {
   ): Promise<Space> {
     const space = await this.getOwned(schoolId, id);
     Object.assign(space, dto);
-    return this.spaces.save(space);
+    try {
+      return await this.spaces.save(space);
+    } catch (error) {
+      if (isDuplicateEntryError(error)) {
+        throw new ConflictException(
+          `A space named "${space.name}" already exists at this school`,
+        );
+      }
+      throw error;
+    }
   }
 
   async remove(schoolId: string, id: string): Promise<void> {

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { DatabaseModule } from '../../database/database.module';
 import { SchoolModule } from './school.module';
 import { SchoolsRepository } from './repositories/schools.repository';
@@ -99,5 +99,14 @@ describe('SpacesService (integration)', () => {
     await service.remove(school.id, space.id);
 
     expect(await service.list(school.id)).toHaveLength(0);
+  });
+
+  it('rejects a duplicate space name within the same school as a clean 409', async () => {
+    const school = await createSchool();
+    await service.create(school.id, { name: 'Lab 1' });
+
+    await expect(service.create(school.id, { name: 'Lab 1' })).rejects.toThrow(
+      ConflictException,
+    );
   });
 });

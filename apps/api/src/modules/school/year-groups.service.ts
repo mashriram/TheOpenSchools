@@ -1,8 +1,10 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { isDuplicateEntryError } from '../../common/duplicate-entry-error';
 import { YearGroupsRepository } from './repositories/year-groups.repository';
 import { YearGroup } from './entities/year-group.entity';
 import { CreateYearGroupDto } from './dto/create-year-group.dto';
@@ -25,15 +27,24 @@ export class YearGroupsService {
       schoolId,
       dto.headOfYearPersonId,
     );
-    return this.yearGroups.save(
-      this.yearGroups.create({
-        schoolId,
-        name: dto.name,
-        shortName: dto.shortName,
-        sequenceNumber: dto.sequenceNumber,
-        headOfYearPersonId: dto.headOfYearPersonId ?? null,
-      }),
-    );
+    try {
+      return await this.yearGroups.save(
+        this.yearGroups.create({
+          schoolId,
+          name: dto.name,
+          shortName: dto.shortName,
+          sequenceNumber: dto.sequenceNumber,
+          headOfYearPersonId: dto.headOfYearPersonId ?? null,
+        }),
+      );
+    } catch (error) {
+      if (isDuplicateEntryError(error)) {
+        throw new ConflictException(
+          `A year group named "${dto.name}" already exists at this school`,
+        );
+      }
+      throw error;
+    }
   }
 
   async update(
@@ -47,7 +58,16 @@ export class YearGroupsService {
       dto.headOfYearPersonId,
     );
     Object.assign(yearGroup, dto);
-    return this.yearGroups.save(yearGroup);
+    try {
+      return await this.yearGroups.save(yearGroup);
+    } catch (error) {
+      if (isDuplicateEntryError(error)) {
+        throw new ConflictException(
+          `A year group named "${yearGroup.name}" already exists at this school`,
+        );
+      }
+      throw error;
+    }
   }
 
   async remove(schoolId: string, id: string): Promise<void> {

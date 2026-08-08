@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { isDuplicateEntryError } from '../../common/duplicate-entry-error';
 import { DepartmentsRepository } from './repositories/departments.repository';
 import { Department } from './entities/department.entity';
 import { CreateDepartmentDto } from './dto/create-department.dto';
@@ -16,9 +21,18 @@ export class DepartmentsService {
     schoolId: string,
     dto: CreateDepartmentDto,
   ): Promise<Department> {
-    return this.departments.save(
-      this.departments.create({ schoolId, sequenceNumber: 0, ...dto }),
-    );
+    try {
+      return await this.departments.save(
+        this.departments.create({ schoolId, sequenceNumber: 0, ...dto }),
+      );
+    } catch (error) {
+      if (isDuplicateEntryError(error)) {
+        throw new ConflictException(
+          `A department named "${dto.name}" already exists at this school`,
+        );
+      }
+      throw error;
+    }
   }
 
   async update(
@@ -28,7 +42,16 @@ export class DepartmentsService {
   ): Promise<Department> {
     const department = await this.getOwned(schoolId, id);
     Object.assign(department, dto);
-    return this.departments.save(department);
+    try {
+      return await this.departments.save(department);
+    } catch (error) {
+      if (isDuplicateEntryError(error)) {
+        throw new ConflictException(
+          `A department named "${department.name}" already exists at this school`,
+        );
+      }
+      throw error;
+    }
   }
 
   async remove(schoolId: string, id: string): Promise<void> {

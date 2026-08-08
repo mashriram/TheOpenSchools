@@ -180,6 +180,32 @@ describe('People directory (e2e)', () => {
       expect(response.status).toBe(401);
     });
 
+    it('returns 404 for a syntactically-valid but nonexistent personId', async () => {
+      const { auth } = await signUpAdmin();
+
+      const response = await request(app.getHttpServer())
+        .get(`/people/${randomUUID()}`)
+        .set(auth);
+
+      expect(response.status).toBe(404);
+    });
+
+    it('returns 404 for a person belonging to a different school', async () => {
+      const { auth } = await signUpAdmin();
+      const { auth: otherAuth } = await signUpAdmin();
+      const createResponse = await request(app.getHttpServer())
+        .post('/people')
+        .set(auth)
+        .send({ surname: 'Smith', firstName: 'Jo' });
+      const personId = body<{ id: string }>(createResponse).id;
+
+      const response = await request(app.getHttpServer())
+        .get(`/people/${personId}`)
+        .set(otherAuth);
+
+      expect(response.status).toBe(404);
+    });
+
     it('filters the directory by formGroupId', async () => {
       const { school, auth } = await signUpAdmin();
       const [year] = await schoolYears.findBySchool(school.id);
@@ -348,6 +374,32 @@ describe('People directory (e2e)', () => {
         .set(studentAuth);
 
       expect(response.status).toBe(403);
+    });
+
+    it('returns 404 for a syntactically-valid but nonexistent familyId', async () => {
+      const { auth } = await signUpAdmin();
+
+      const response = await request(app.getHttpServer())
+        .get(`/families/${randomUUID()}`)
+        .set(auth);
+
+      expect(response.status).toBe(404);
+    });
+
+    it('returns 404 for a family belonging to a different school', async () => {
+      const { auth } = await signUpAdmin();
+      const { auth: otherAuth } = await signUpAdmin();
+      const createResponse = await request(app.getHttpServer())
+        .post('/families')
+        .set(auth)
+        .send({ name: 'The Smiths' });
+      const familyId = body<{ id: string }>(createResponse).id;
+
+      const response = await request(app.getHttpServer())
+        .get(`/families/${familyId}`)
+        .set(otherAuth);
+
+      expect(response.status).toBe(404);
     });
   });
 });

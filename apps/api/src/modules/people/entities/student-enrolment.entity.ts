@@ -22,6 +22,17 @@ export class StudentEnrolment extends SoftDeletableEntity {
   @Column({ type: 'varchar', length: 36 })
   schoolYearId: string;
 
+  // CASCADE, deliberately, even though YearGroup/FormGroup are reference
+  // lookups rather than StudentEnrolment's "true" owner (Person/SchoolYear
+  // are): an audit initially flagged this as risky ("a future purge tool
+  // hard-deleting one FormGroup would silently destroy enrolment history")
+  // and RESTRICT was tried, but nothing in this app ever hard-deletes a
+  // FormGroup/YearGroup directly - the only place hard deletes cascade
+  // through this chain at all is a whole-School teardown (used throughout
+  // the test suite's cleanup, and a plausible future "permanently delete
+  // this school" admin action), which legitimately needs to reach all the
+  // way down. RESTRICT blocked that real case to guard against a
+  // hypothetical one, so it was reverted.
   @ManyToOne(() => YearGroup, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'yearGroupId' })
   yearGroup: YearGroup;

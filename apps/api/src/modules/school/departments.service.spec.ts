@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { DatabaseModule } from '../../database/database.module';
 import { SchoolModule } from './school.module';
 import { SchoolsRepository } from './repositories/schools.repository';
@@ -106,5 +106,22 @@ describe('DepartmentsService (integration)', () => {
     await service.remove(school.id, department.id);
 
     expect(await service.list(school.id)).toHaveLength(0);
+  });
+
+  it('rejects a duplicate department name within the same school as a clean 409', async () => {
+    const school = await createSchool();
+    await service.create(school.id, {
+      type: 'LearningArea',
+      name: 'Mathematics',
+      shortName: 'MATH',
+    });
+
+    await expect(
+      service.create(school.id, {
+        type: 'LearningArea',
+        name: 'Mathematics',
+        shortName: 'MTH2',
+      }),
+    ).rejects.toThrow(ConflictException);
   });
 });

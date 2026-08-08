@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { isDuplicateEntryError } from '../../common/duplicate-entry-error';
 import { HousesRepository } from './repositories/houses.repository';
 import { House } from './entities/house.entity';
 import { CreateHouseDto } from './dto/create-house.dto';
@@ -13,14 +18,23 @@ export class HousesService {
   }
 
   async create(schoolId: string, dto: CreateHouseDto): Promise<House> {
-    return this.houses.save(
-      this.houses.create({
-        schoolId,
-        name: dto.name,
-        shortName: dto.shortName,
-        logoUrl: dto.logoUrl ?? null,
-      }),
-    );
+    try {
+      return await this.houses.save(
+        this.houses.create({
+          schoolId,
+          name: dto.name,
+          shortName: dto.shortName,
+          logoUrl: dto.logoUrl ?? null,
+        }),
+      );
+    } catch (error) {
+      if (isDuplicateEntryError(error)) {
+        throw new ConflictException(
+          `A house named "${dto.name}" already exists at this school`,
+        );
+      }
+      throw error;
+    }
   }
 
   async update(
@@ -30,7 +44,16 @@ export class HousesService {
   ): Promise<House> {
     const house = await this.getOwned(schoolId, id);
     Object.assign(house, dto);
-    return this.houses.save(house);
+    try {
+      return await this.houses.save(house);
+    } catch (error) {
+      if (isDuplicateEntryError(error)) {
+        throw new ConflictException(
+          `A house named "${house.name}" already exists at this school`,
+        );
+      }
+      throw error;
+    }
   }
 
   async remove(schoolId: string, id: string): Promise<void> {

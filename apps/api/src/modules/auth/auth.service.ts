@@ -8,6 +8,7 @@ import { PersonRolesRepository } from '../people/repositories/person-roles.repos
 import { RefreshTokensRepository } from './repositories/refresh-tokens.repository';
 import { HashingService } from './hashing.service';
 import { AccessTokenPayload } from './access-token-payload';
+import { getRequiredEnv } from '../../common/get-required-env';
 
 const ACCESS_TOKEN_TTL = '15m';
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -26,6 +27,8 @@ export interface AuthResult {
 
 @Injectable()
 export class AuthService {
+  private readonly jwtAccessSecret: string;
+
   constructor(
     private readonly schools: SchoolsRepository,
     private readonly people: PeopleRepository,
@@ -34,8 +37,10 @@ export class AuthService {
     private readonly refreshTokens: RefreshTokensRepository,
     private readonly hashing: HashingService,
     private readonly jwt: JwtService,
-    private readonly config: ConfigService,
-  ) {}
+    config: ConfigService,
+  ) {
+    this.jwtAccessSecret = getRequiredEnv(config, 'JWT_ACCESS_SECRET');
+  }
 
   async login(
     schoolSlug: string,
@@ -202,7 +207,7 @@ export class AuthService {
 
   private signAccessToken(payload: AccessTokenPayload): Promise<string> {
     return this.jwt.signAsync(payload, {
-      secret: this.config.get<string>('JWT_ACCESS_SECRET', 'change-me'),
+      secret: this.jwtAccessSecret,
       expiresIn: ACCESS_TOKEN_TTL,
     });
   }

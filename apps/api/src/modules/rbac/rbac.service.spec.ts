@@ -162,13 +162,19 @@ describe('RbacService (integration)', () => {
   });
 
   describe('deleteRole', () => {
-    it('deletes an Additional role', async () => {
+    it('soft-deletes an Additional role (recoverable, not a hard DELETE)', async () => {
       const school = await createSchool();
       const role = await service.createRole(school.id, CREATE_ROLE_DTO);
 
       await service.deleteRole(school.id, role.id);
 
       expect(await roles.findOne({ where: { id: role.id } })).toBeNull();
+      const withDeleted = await roles.findOne({
+        where: { id: role.id },
+        withDeleted: true,
+      });
+      expect(withDeleted).not.toBeNull();
+      expect(withDeleted!.deletedAt).not.toBeNull();
     });
 
     it('rejects deleting a Core role', async () => {

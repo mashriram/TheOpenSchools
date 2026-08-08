@@ -236,6 +236,60 @@ describe('GDPR (e2e)', () => {
         '2026-01',
       );
     });
+
+    it('rejects a missing policyVersion with 400', async () => {
+      const { auth } = await signUpAdmin();
+
+      const response = await request(app.getHttpServer())
+        .post('/gdpr/consent')
+        .set(auth)
+        .send({});
+
+      expect(response.status).toBe(400);
+    });
+  });
+
+  describe('not-found handling', () => {
+    it('returns 404 exporting a syntactically-valid but nonexistent personId', async () => {
+      const { auth } = await signUpAdmin();
+
+      const response = await request(app.getHttpServer())
+        .get(`/gdpr/export/${randomUUID()}`)
+        .set(auth);
+
+      expect(response.status).toBe(404);
+    });
+
+    it('returns 404 exporting a personId that belongs to a different school', async () => {
+      const { auth } = await signUpAdmin();
+      const { personId: otherSchoolPersonId } = await signUpAdmin();
+
+      const response = await request(app.getHttpServer())
+        .get(`/gdpr/export/${otherSchoolPersonId}`)
+        .set(auth);
+
+      expect(response.status).toBe(404);
+    });
+
+    it('returns 400 for a malformed personId', async () => {
+      const { auth } = await signUpAdmin();
+
+      const response = await request(app.getHttpServer())
+        .get('/gdpr/export/not-a-uuid')
+        .set(auth);
+
+      expect(response.status).toBe(400);
+    });
+
+    it('returns 404 requesting erasure for a nonexistent personId', async () => {
+      const { auth } = await signUpAdmin();
+
+      const response = await request(app.getHttpServer())
+        .post(`/gdpr/erasure-request/${randomUUID()}`)
+        .set(auth);
+
+      expect(response.status).toBe(404);
+    });
   });
 
   it('rejects unauthenticated requests to every /gdpr route with 401', async () => {
