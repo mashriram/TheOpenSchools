@@ -42,7 +42,32 @@ export interface EntitySensitiveFields {
  * IndividualNeed, Behaviour, ...) - empty until then.
  */
 export const SENSITIVE_FIELDS_BY_ENTITY: Record<string, EntitySensitiveFields> =
-  {};
+  {
+    // Tier 2, M18: a safeguarding lead has a real, legitimate need for
+    // forensic history on these ("was this note altered after the
+    // referral?") - encrypt rather than omit, per plan §Data Safety Design
+    // D's per-entity judgment call.
+    IndividualNeed: { encrypt: new Set(['strategies', 'targets', 'notes']) },
+    IndividualNeedInvestigation: {
+      encrypt: new Set([
+        'reason',
+        'strategiesTried',
+        'parentsResponse',
+        'resolutionDetails',
+      ]),
+    },
+    IndividualNeedInvestigationContribution: {
+      encrypt: new Set([
+        'cognition',
+        'memory',
+        'selfManagement',
+        'attention',
+        'socialInteraction',
+        'communication',
+        'comment',
+      ]),
+    },
+  };
 
 /**
  * Replaces sensitive values with a fixed marker (secrets) or an encrypted

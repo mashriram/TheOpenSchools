@@ -20,6 +20,7 @@ import { CurriculumModule } from './modules/curriculum/curriculum.module';
 import { TimetableModule } from './modules/timetable/timetable.module';
 import { MarkbookModule } from './modules/markbook/markbook.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
+import { IndividualNeedsModule } from './modules/individual-needs/individual-needs.module';
 import { RequestContextInterceptor } from './common/request-context.interceptor';
 
 @Module({
@@ -36,6 +37,7 @@ import { RequestContextInterceptor } from './common/request-context.interceptor'
     TimetableModule,
     MarkbookModule,
     AttendanceModule,
+    IndividualNeedsModule,
   ],
   controllers: [AppController],
   providers: [

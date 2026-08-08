@@ -20,6 +20,7 @@ import { CURRICULUM_RBAC_CATALOG } from '../curriculum/curriculum-rbac-catalog';
 import { TIMETABLE_RBAC_CATALOG } from '../timetable/timetable-rbac-catalog';
 import { MARKBOOK_RBAC_CATALOG } from '../markbook/markbook-rbac-catalog';
 import { ATTENDANCE_RBAC_CATALOG } from '../attendance/attendance-rbac-catalog';
+import { INDIVIDUAL_NEEDS_RBAC_CATALOG } from '../individual-needs/individual-needs-rbac-catalog';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ export class RbacModule implements OnModuleInit {
       ...TIMETABLE_RBAC_CATALOG,
       ...MARKBOOK_RBAC_CATALOG,
       ...ATTENDANCE_RBAC_CATALOG,
+      ...INDIVIDUAL_NEEDS_RBAC_CATALOG,
     ]);
   }
 }
