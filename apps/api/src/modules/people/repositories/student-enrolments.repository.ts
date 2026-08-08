@@ -22,4 +22,15 @@ export class StudentEnrolmentsRepository extends Repository<StudentEnrolment> {
   ): Promise<StudentEnrolment | null> {
     return this.findOne({ where: { personId, schoolYearId } });
   }
+
+  findByFormGroup(formGroupId: string): Promise<StudentEnrolment[]> {
+    return this.find({ where: { formGroupId } });
+  }
+
+  findByPersonAndFormGroup(
+    personId: string,
+    formGroupId: string,
+  ): Promise<StudentEnrolment | null> {
+    return this.findOne({ where: { personId, formGroupId } });
+  }
 }

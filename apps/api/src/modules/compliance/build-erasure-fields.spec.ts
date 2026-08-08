@@ -1,4 +1,7 @@
-import { buildErasureFields } from './build-erasure-fields';
+import {
+  buildAttendanceLogPersonErasureFields,
+  buildErasureFields,
+} from './build-erasure-fields';
 
 describe('buildErasureFields', () => {
   it('nulls every PII field it targets', () => {
@@ -72,5 +75,24 @@ describe('buildErasureFields', () => {
     ].sort();
 
     expect(Object.keys(buildErasureFields()).sort()).toEqual(expectedFields);
+  });
+});
+
+describe('buildAttendanceLogPersonErasureFields', () => {
+  it('nulls the Tier B free-text fields, and nothing else', () => {
+    const fields = buildAttendanceLogPersonErasureFields();
+
+    expect(fields.reason).toBeNull();
+    expect(fields.comment).toBeNull();
+    expect(Object.keys(fields).sort()).toEqual(['comment', 'reason']);
+  });
+
+  it('does not touch the structural attendance fact (code, direction, date)', () => {
+    const fields = buildAttendanceLogPersonErasureFields();
+
+    expect(fields).not.toHaveProperty('attendanceCodeId');
+    expect(fields).not.toHaveProperty('direction');
+    expect(fields).not.toHaveProperty('date');
+    expect(fields).not.toHaveProperty('personId');
   });
 });

@@ -1,4 +1,5 @@
 import { Person } from '../people/entities/person.entity';
+import { AttendanceLogPerson } from '../attendance/entities/attendance-log-person.entity';
 
 /**
  * The fixed-up version of Gibbon's ScrubbableGateway pattern (per the
@@ -48,5 +49,27 @@ export function buildErasureFields(): Partial<Person> {
     privacy: null,
     preferences: null,
     customFields: null,
+  };
+}
+
+/**
+ * Tier 2, M17: Attendance is the first Tier 2 entity to close a real
+ * Gibbon gap directly (plan §Data Safety Design F) - Gibbon's
+ * gibbonAttendanceLogPerson has zero retention/erasure coverage of any
+ * kind, ever, for any person. This nulls the Tier B free-text fields that
+ * can reveal health/religious information (`reason`, e.g. "Medical";
+ * `comment`) while deliberately keeping the structural attendance fact
+ * (attendanceCodeId/direction/date/personId) intact - a school's statutory
+ * presence/absence record is not itself sensitive the way the free-text
+ * reason can be, and several jurisdictions require schools to retain
+ * attendance registers regardless of an individual erasure request.
+ */
+export function buildAttendanceLogPersonErasureFields(): Pick<
+  AttendanceLogPerson,
+  'reason' | 'comment'
+> {
+  return {
+    reason: null,
+    comment: null,
   };
 }

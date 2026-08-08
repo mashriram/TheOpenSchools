@@ -12,6 +12,7 @@ import { StaffRepository } from '../people/repositories/staff.repository';
 import { StudentEnrolmentsRepository } from '../people/repositories/student-enrolments.repository';
 import { FamilyAdultsRepository } from '../people/repositories/family-adults.repository';
 import { FamilyChildrenRepository } from '../people/repositories/family-children.repository';
+import { AttendanceLogPerson } from '../attendance/entities/attendance-log-person.entity';
 import { Person } from '../people/entities/person.entity';
 import { PersonCredential } from '../people/entities/person-credential.entity';
 import { PersonPhone } from '../people/entities/person-phone.entity';
@@ -21,7 +22,10 @@ import { HashingService } from '../auth/hashing.service';
 import { AuditService } from './audit.service';
 import { ConsentRecordsRepository } from './repositories/consent-records.repository';
 import { ConsentRecord } from './entities/consent-record.entity';
-import { buildErasureFields } from './build-erasure-fields';
+import {
+  buildAttendanceLogPersonErasureFields,
+  buildErasureFields,
+} from './build-erasure-fields';
 
 @Injectable()
 export class GdprService {
@@ -142,6 +146,15 @@ export class GdprService {
       await manager.getRepository(PersonPhone).delete({ personId });
       await manager.getRepository(PersonEmergencyContact).delete({ personId });
       await manager.getRepository(PersonOAuthConnection).delete({ personId });
+
+      // Tier 2, M17: Gibbon has zero retention/erasure coverage for
+      // attendance records at all - this closes that gap directly rather
+      // than leaving it for a later milestone. Nulls the Tier B free-text
+      // fields only; the structural attendance fact is kept (see
+      // buildAttendanceLogPersonErasureFields' doc comment).
+      await manager
+        .getRepository(AttendanceLogPerson)
+        .update({ personId }, buildAttendanceLogPersonErasureFields());
 
       await this.auditService.record(manager, {
         action: 'erase',

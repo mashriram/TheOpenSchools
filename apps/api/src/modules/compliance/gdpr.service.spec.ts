@@ -8,6 +8,8 @@ import { PeopleModule } from '../people/people.module';
 import { RbacModule } from '../rbac/rbac.module';
 import { AuthModule } from '../auth/auth.module';
 import { ComplianceModule } from './compliance.module';
+import { AttendanceModule } from '../attendance/attendance.module';
+import { AttendanceLogPeopleRepository } from '../attendance/repositories/attendance-log-people.repository';
 import { SchoolsRepository } from '../school/repositories/schools.repository';
 import { SchoolYearsRepository } from '../school/repositories/school-years.repository';
 import { YearGroupsRepository } from '../school/repositories/year-groups.repository';
@@ -34,6 +36,7 @@ describe('GdprService (integration)', () => {
   let personRoles: PersonRolesRepository;
   let roles: RolesRepository;
   let auditLogs: AuditLogsRepository;
+  let attendanceLogPeople: AttendanceLogPeopleRepository;
   let service: GdprService;
   let createdSchoolIds: string[];
 
@@ -47,6 +50,7 @@ describe('GdprService (integration)', () => {
         RbacModule,
         AuthModule,
         ComplianceModule,
+        AttendanceModule,
       ],
     }).compile();
 
@@ -61,6 +65,7 @@ describe('GdprService (integration)', () => {
     personRoles = module.get(PersonRolesRepository);
     roles = module.get(RolesRepository);
     auditLogs = module.get(AuditLogsRepository);
+    attendanceLogPeople = module.get(AttendanceLogPeopleRepository);
     service = module.get(GdprService);
   });
 
@@ -243,6 +248,33 @@ describe('GdprService (integration)', () => {
       await expect(
         service.requestErasure(otherSchool.id, person.id),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    // Regression test for a real Gibbon gap (plan §Data Safety Design F):
+    // Gibbon's gibbonAttendanceLogPerson has zero retention/erasure
+    // coverage at all - this proves Attendance now participates in the
+    // GDPR erasure pipeline from day one, unlike Gibbon.
+    it('nulls Tier B attendance fields (reason/comment) while keeping the structural record', async () => {
+      const { school, person } = await createFixture();
+      const log = await attendanceLogPeople.save(
+        attendanceLogPeople.create({
+          personId: person.id,
+          direction: 'In',
+          reason: 'Medical',
+          comment: 'Doctor appointment',
+          date: '2026-09-01',
+        }),
+      );
+
+      await service.requestErasure(school.id, person.id);
+
+      const erasedLog = await attendanceLogPeople.findOne({
+        where: { id: log.id },
+      });
+      expect(erasedLog!.reason).toBeNull();
+      expect(erasedLog!.comment).toBeNull();
+      expect(erasedLog!.direction).toBe('In');
+      expect(erasedLog!.date).toBe('2026-09-01');
     });
   });
 
