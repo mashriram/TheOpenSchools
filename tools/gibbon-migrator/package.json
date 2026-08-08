@@ -2,6 +2,7 @@
   "name": "@purpleschools/gibbon-migrator",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "One-shot ETL CLI that imports a school's Gibbon MySQL data into PurpleSchools",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

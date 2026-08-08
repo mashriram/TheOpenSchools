@@ -14,6 +14,7 @@ import { PermissionsRepository } from '../src/modules/rbac/repositories/permissi
 import { PlatformModulesRepository } from '../src/modules/rbac/repositories/platform-modules.repository';
 import { SchoolModuleEnablementsRepository } from '../src/modules/rbac/repositories/school-module-enablements.repository';
 import { RbacCatalogSeeder } from '../src/modules/rbac/seed/rbac-catalog-seeder';
+import { FOUNDATION_RBAC_CATALOG } from '../src/modules/rbac/seed/foundation-rbac-catalog';
 import { HashingService } from '../src/modules/auth/hashing.service';
 
 const PASSWORD = 'correct-horse-battery-staple';
@@ -206,6 +207,32 @@ describe('RBAC (e2e)', () => {
     return body<LoginResponseBody>(response).accessToken;
   }
 
+  const SLOT_DEFAULT_PERMISSION_FLAG = {
+    Admin: 'defaultPermissionAdmin',
+    Teacher: 'defaultPermissionTeacher',
+    Student: 'defaultPermissionStudent',
+    Parent: 'defaultPermissionParent',
+    Support: 'defaultPermissionSupport',
+  } as const;
+
+  /**
+   * The real Gibbon-grounded default-permission flags, straight from the
+   * catalog signup (M7) actually seeds Permissions from - not a hand-picked
+   * subset. This is the "hand-computed grant" the parity test below checks
+   * /me/abilities against, for every one of Foundation's real actions.
+   */
+  function expectedGrantsForSlot(
+    slot: keyof typeof SLOT_DEFAULT_PERMISSION_FLAG,
+  ): string[] {
+    const flag = SLOT_DEFAULT_PERMISSION_FLAG[slot];
+    return FOUNDATION_RBAC_CATALOG.flatMap(
+      (platformModule) => platformModule.actions,
+    )
+      .filter((action) => action[flag])
+      .map((action) => `${action.verb}:${action.subject}`)
+      .sort();
+  }
+
   describe('GET /me/abilities', () => {
     it("includes the admin's granted rules", async () => {
       const { school, adminEmail } = await seedSchoolWithAdminAndTeacher();
@@ -263,6 +290,102 @@ describe('RBAC (e2e)', () => {
       ).rules;
       const subjects = rules.map((r) => `${r.action}:${r.subject}`).sort();
       expect(subjects).toEqual(['manage:Permission', 'manage:Role']);
+    });
+
+    it('grants /me/abilities exactly the defaultPermission-flagged actions from the real Foundation catalog, across all 5 signup-seeded roles (M12 broader sample)', async () => {
+      const subdomainSlug = randomUUID();
+      const adminEmail = `${randomUUID()}@example.com`;
+      const signupResponse = await request(app.getHttpServer())
+        .post('/auth/signup')
+        .send({
+          schoolName: 'Riverside Academy',
+          subdomainSlug,
+          adminEmail,
+          adminPassword: PASSWORD,
+          adminFirstName: 'Ada',
+          adminSurname: 'Admin',
+        });
+      expect(signupResponse.status).toBe(201);
+      const school = await schools.findBySlug(subdomainSlug);
+      if (!school) {
+        throw new Error('Expected signup to create a School');
+      }
+      createdSchoolIds.push(school.id);
+
+      const adminAccessToken =
+        body<LoginResponseBody>(signupResponse).accessToken;
+      const rolesResponse = await request(app.getHttpServer())
+        .get('/rbac/roles')
+        .set('Authorization', `Bearer ${adminAccessToken}`);
+      const roleIdByName = new Map(
+        body<{ id: string; name: string }[]>(rolesResponse).map((r) => [
+          r.name,
+          r.id,
+        ]),
+      );
+
+      const roleNameForSlot: Record<
+        keyof typeof SLOT_DEFAULT_PERMISSION_FLAG,
+        string
+      > = {
+        Admin: 'Administrator',
+        Teacher: 'Teacher',
+        Student: 'Student',
+        Parent: 'Parent',
+        Support: 'Support Staff',
+      };
+
+      for (const slot of Object.keys(
+        SLOT_DEFAULT_PERMISSION_FLAG,
+      ) as (keyof typeof SLOT_DEFAULT_PERMISSION_FLAG)[]) {
+        const roleName = roleNameForSlot[slot];
+        const roleId = roleIdByName.get(roleName);
+        if (!roleId) {
+          throw new Error(`Expected signup to seed a ${roleName} role`);
+        }
+
+        let accessToken: string;
+        if (slot === 'Admin') {
+          accessToken = adminAccessToken;
+        } else {
+          const email = `${randomUUID()}@example.com`;
+          const person = await people.save(
+            people.create({
+              schoolId: school.id,
+              surname: roleName,
+              firstName: 'Test',
+              email,
+            }),
+          );
+          await personRoles.save(
+            personRoles.create({
+              personId: person.id,
+              roleId,
+              isPrimary: true,
+            }),
+          );
+          await personCredentials.save(
+            personCredentials.create({
+              personId: person.id,
+              schoolId: school.id,
+              username: email,
+              passwordHash: await hashing.hashPassword(PASSWORD),
+            }),
+          );
+          accessToken = await loginAs(subdomainSlug, email);
+        }
+
+        const abilitiesResponse = await request(app.getHttpServer())
+          .get('/me/abilities')
+          .set('Authorization', `Bearer ${accessToken}`);
+        expect(abilitiesResponse.status).toBe(200);
+        const rules = body<{ rules: { action: string; subject: string }[] }>(
+          abilitiesResponse,
+        ).rules;
+        const actual = rules.map((r) => `${r.action}:${r.subject}`).sort();
+
+        expect(actual).toEqual(expectedGrantsForSlot(slot));
+      }
     });
   });
 
