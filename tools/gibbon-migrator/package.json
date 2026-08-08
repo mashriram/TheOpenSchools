@@ -9,8 +9,12 @@
     "migrate": "tsx src/bin.ts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.mts",
     "typecheck": "tsc --noEmit",
     "lint": "echo \"no lint configured for gibbon-migrator\""
+  },
+  "dependencies": {
+    "mysql2": "^3.23.2"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",
