@@ -146,6 +146,11 @@ describe('Auth (e2e)', () => {
         c.startsWith('refreshToken='),
       );
       expect(refreshCookie).toContain('HttpOnly');
+      // Path must be '/', not '/auth': this cookie is read by the Next.js
+      // BFF's proxy on every protected route (e.g. /people), which has no
+      // literal /auth path of its own - a narrower Path means the browser
+      // never sends the cookie back at all, breaking every future request.
+      expect(refreshCookie).toContain('Path=/;');
     });
 
     it('rejects an incorrect password', async () => {

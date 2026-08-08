@@ -19,11 +19,17 @@ import { CurrentUser } from './current-user.decorator';
 import type { AccessTokenPayload } from './access-token-payload';
 
 const REFRESH_TOKEN_COOKIE = 'refreshToken';
+// path must be '/' - this cookie is read by the Next.js BFF's proxy.ts on
+// every protected route (e.g. /people), not just the /auth/* endpoints here.
+// A browser only re-sends a cookie for requests whose path matches the Path
+// it was set with, evaluated against the browser-facing Next.js app's own
+// route space - which has no literal /auth routes - so scoping this to
+// '/auth' meant the cookie was never sent back at all.
 const REFRESH_TOKEN_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: true,
   sameSite: 'strict' as const,
-  path: '/auth',
+  path: '/',
 };
 
 // @types/cookie-parser types Request.cookies as `any`; this keeps that `any`
@@ -114,7 +120,7 @@ export class AuthController {
     if (rawRefreshToken) {
       await this.authService.logout(rawRefreshToken);
     }
-    response.clearCookie(REFRESH_TOKEN_COOKIE, { path: '/auth' });
+    response.clearCookie(REFRESH_TOKEN_COOKIE, { path: '/' });
   }
 
   @UseGuards(JwtAuthGuard)
