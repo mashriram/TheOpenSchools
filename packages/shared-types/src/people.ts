@@ -16,3 +16,13 @@ export type PersonPhoneType = (typeof PERSON_PHONE_TYPES)[number];
 
 export const PERSON_OAUTH_PROVIDERS = ['Google', 'Microsoft', 'Generic'] as const;
 export type PersonOAuthProvider = (typeof PERSON_OAUTH_PROVIDERS)[number];
+
+export const FAMILY_STATUSES = [
+  'Married',
+  'Separated',
+  'Divorced',
+  'DeFacto',
+  'Other',
+  'Single',
+] as const;
+export type FamilyStatus = (typeof FAMILY_STATUSES)[number];

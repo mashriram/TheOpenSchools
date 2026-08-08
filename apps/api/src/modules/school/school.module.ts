@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PeopleModule } from '../people/people.module';
 import { RbacModule } from '../rbac/rbac.module';
@@ -56,7 +56,12 @@ import { SettingsController } from './settings.controller';
     ]),
     // YearGroupsService/FormGroupStaffService validate that a given personId
     // belongs to the caller's school before wiring a cross-entity reference.
-    PeopleModule,
+    // A genuine mutual dependency, not accidental: PeopleModule's own
+    // services (M8) need SchoolModule right back, to validate schoolYearId/
+    // yearGroupId/formGroupId/houseId ownership - forwardRef() is the
+    // sanctioned way to wire two modules that legitimately need each other,
+    // not a workaround for bad module boundaries.
+    forwardRef(() => PeopleModule),
     // For PoliciesGuard, used by every controller below via @UseGuards().
     RbacModule,
   ],
