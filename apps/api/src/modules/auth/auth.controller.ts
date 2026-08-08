@@ -10,7 +10,9 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
+import { SignupService } from './signup.service';
 import { LoginDto } from './dto/login.dto';
+import { SignupDto } from './dto/signup.dto';
 import { SwitchRoleDto } from './dto/switch-role.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './current-user.decorator';
@@ -34,7 +36,28 @@ function readRefreshTokenCookie(request: Request): string | undefined {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly signupService: SignupService,
+  ) {}
+
+  @Post('signup')
+  async signup(
+    @Body() dto: SignupDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.signupService.signup(dto);
+    response.cookie(
+      REFRESH_TOKEN_COOKIE,
+      result.refreshToken,
+      REFRESH_TOKEN_COOKIE_OPTIONS,
+    );
+    return {
+      accessToken: result.accessToken,
+      person: result.person,
+      activeRoleId: result.activeRoleId,
+    };
+  }
 
   @Post('login')
   async login(

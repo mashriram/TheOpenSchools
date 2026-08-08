@@ -69,7 +69,7 @@ describe('Auth (e2e)', () => {
     }
   });
 
-  /** Seeds a full login-ready user, bypassing signup (M7, not built yet). */
+  /** Seeds a full login-ready user directly, bypassing signup - keeps this suite's fixtures independent of M7's signup flow (covered separately in signup.e2e-spec.ts). */
   async function seedLoginableUser(
     overrides: { canLogin?: boolean; email?: string } = {},
   ) {

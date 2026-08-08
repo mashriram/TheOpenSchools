@@ -156,7 +156,12 @@ export class AuthService {
     });
   }
 
-  private async issueTokens(
+  /**
+   * Public (not just an internal helper): SignupService (M7) calls this
+   * directly after its own transaction commits, to log the newly-created
+   * admin in immediately with the same response shape as a normal login.
+   */
+  async issueTokens(
     person: {
       id: string;
       schoolId: string;

@@ -28,7 +28,12 @@ export class PersonCredential extends BaseEntity {
   @Column({ type: 'varchar', length: 36 })
   schoolId: string;
 
-  @Column({ type: 'varchar', length: 60 })
+  // 255, not Gibbon-style 60: this MVP mirrors the person's email into
+  // username (no separate username concept yet), and Person.email already
+  // allows up to 255 chars (RFC 5321's ~254-char practical email limit) -
+  // this column must match or long-email signups fail with a DB truncation
+  // error instead of a clean validation message.
+  @Column({ type: 'varchar', length: 255 })
   username: string;
 
   @Column({ type: 'varchar', length: 255 })

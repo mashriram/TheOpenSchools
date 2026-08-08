@@ -162,6 +162,12 @@ describe('RbacCatalogSeeder (integration)', () => {
     expect(createdActions.every((a) => a !== null)).toBe(true);
     expect(createdActions).toHaveLength(21);
 
-    await cleanUpCatalog(FOUNDATION_RBAC_CATALOG);
+    // Deliberately NOT cleaned up: unlike the fixture catalogs above, this
+    // is the real Foundation catalog - persistent, idempotently-upserted
+    // infrastructure that RbacModule's onModuleInit (M7) and other tests
+    // (signup.service.spec.ts, rbac.e2e-spec.ts) depend on existing. Prior
+    // to M7, this test tore it down afterward on the assumption it was just
+    // another fixture; that became actively harmful once other tests
+    // started relying on the catalog persisting across the suite.
   });
 });

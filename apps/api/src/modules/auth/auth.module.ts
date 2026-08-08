@@ -10,6 +10,7 @@ import { RefreshToken } from './entities/refresh-token.entity';
 import { RefreshTokensRepository } from './repositories/refresh-tokens.repository';
 import { HashingService } from './hashing.service';
 import { AuthService } from './auth.service';
+import { SignupService } from './signup.service';
 import { AuthController } from './auth.controller';
 import { MeController } from './me.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -29,6 +30,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     RefreshTokensRepository,
     HashingService,
     AuthService,
+    SignupService,
     JwtStrategy,
   ],
   exports: [HashingService, AuthService],

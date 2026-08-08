@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PlatformModule } from './entities/platform-module.entity';
 import { Action } from './entities/action.entity';
@@ -48,4 +48,18 @@ import { RbacController } from './rbac.controller';
     CaslAbilityFactory,
   ],
 })
-export class RbacModule {}
+export class RbacModule implements OnModuleInit {
+  constructor(private readonly rbacCatalogSeeder: RbacCatalogSeeder) {}
+
+  // Runs on every app boot (and in e2e tests, which call app.init()) - safe
+  // because seedCatalog() is an idempotent upsert. This guarantees the
+  // global Module/Action catalog always exists before M7's signup flow
+  // needs to grant default permissions, without an easy-to-forget manual
+  // ops step. Bare `Test.createTestingModule().compile()` (used by this
+  // module's own integration specs) does NOT trigger onModuleInit - only
+  // `.init()` does - so those tests are unaffected and keep seeding their
+  // own ad hoc fixtures.
+  async onModuleInit(): Promise<void> {
+    await this.rbacCatalogSeeder.seedCatalog();
+  }
+}
