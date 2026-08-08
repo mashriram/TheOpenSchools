@@ -193,4 +193,8 @@ export class Person extends SoftDeletableEntity {
 
   @Column({ type: 'json', nullable: true })
   customFields: Record<string, unknown> | null;
+
+  /** Set by the GDPR erasure pipeline (M9) - null means never erased. */
+  @Column({ type: 'timestamp', nullable: true })
+  erasedAt: Date | null;
 }

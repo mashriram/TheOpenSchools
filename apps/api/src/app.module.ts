@@ -4,7 +4,7 @@ import {
   NestModule,
   ValidationPipe,
 } from '@nestjs/common';
-import { APP_PIPE } from '@nestjs/core';
+import { APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import cookieParser from 'cookie-parser';
 import { AppController } from './app.controller';
@@ -15,6 +15,8 @@ import { SchoolModule } from './modules/school/school.module';
 import { RbacModule } from './modules/rbac/rbac.module';
 import { PeopleModule } from './modules/people/people.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ComplianceModule } from './modules/compliance/compliance.module';
+import { RequestContextInterceptor } from './common/request-context.interceptor';
 
 @Module({
   imports: [
@@ -25,6 +27,7 @@ import { AuthModule } from './modules/auth/auth.module';
     RbacModule,
     PeopleModule,
     AuthModule,
+    ComplianceModule,
   ],
   controllers: [AppController],
   providers: [
@@ -39,6 +42,12 @@ import { AuthModule } from './modules/auth/auth.module';
         forbidNonWhitelisted: true,
         transform: true,
       }),
+    },
+    {
+      // Same reasoning: needs to run for e2e tests too, and every request
+      // needs the actor/school context available for AuditService.
+      provide: APP_INTERCEPTOR,
+      useClass: RequestContextInterceptor,
     },
   ],
 })
