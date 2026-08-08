@@ -5,12 +5,13 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { CaslAbilityFactory } from './casl-ability.factory';
+import { AppAbility, CaslAbilityFactory } from './casl-ability.factory';
 import { CHECK_POLICIES_KEY, PolicyHandler } from './check-policies.decorator';
 import type { AccessTokenPayload } from '../auth/access-token-payload';
 
 interface RequestWithUser {
   user: AccessTokenPayload;
+  ability?: AppAbility;
 }
 
 /**
@@ -40,6 +41,10 @@ export class PoliciesGuard implements CanActivate {
       request.user.schoolId,
       request.user.activeRoleId,
     );
+    // Stashed so a service handling this same request can reuse it (via the
+    // CurrentAbility() decorator) for a row-level check after fetching a
+    // single record, instead of a second buildAbilityForRole DB round-trip.
+    request.ability = ability;
 
     const allowed = handlers.every((handler) => handler(ability));
     if (!allowed) {

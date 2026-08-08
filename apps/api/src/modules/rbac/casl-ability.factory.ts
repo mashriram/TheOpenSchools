@@ -11,6 +11,23 @@ import { isActionGrantable } from './seed/module-enablement';
 export type AppAbility = MongoAbility<[string, string]>;
 
 /**
+ * CASL's AbilityBuilder.can() overloads type-check `conditions` against a
+ * closed literal subject/interface union it can infer instance shapes from
+ * - our subject slot is deliberately plain `string` (Foundation's free-text,
+ * migration-safe verb/subject catalog; see the class doc comment below), so
+ * TypeScript can never resolve a conditions-accepting overload for it. This
+ * narrow, local cast is the accepted boundary for that structural mismatch;
+ * the runtime behavior is correct (CASL doesn't care about these literal
+ * types at runtime) and is covered by this file's and authorize.spec.ts's
+ * tests - do not "fix" this by widening it further or casting `can` itself.
+ */
+type ConditionalCanBuilder = (
+  verb: string,
+  subjectType: string,
+  conditions: Record<string, unknown>,
+) => void;
+
+/**
  * Builds a CASL Ability from a Role's granted Permissions, gated by module
  * enablement: a disabled SchoolModuleEnablement (or a globally inactive
  * PlatformModule) removes that module's actions from the built ability even
@@ -18,11 +35,17 @@ export type AppAbility = MongoAbility<[string, string]>;
  * Gibbon's ad hoc isActionAccessible() check, now centralized in one place
  * instead of called at the top of every page script.
  *
- * Permission.conditions (schema-ready for Tier 2's row-level rules) is not
- * wired into `can()` yet: every row is `null` this milestone, and CASL v7's
- * MongoAbility conditions type parameter doesn't compose cleanly with a
- * dynamically-shaped JSON column without real query shapes to type it
- * against. Revisit when Tier 2 defines what those shapes actually are.
+ * Permission.conditions (schema-ready since Foundation) is wired into
+ * `can()` starting in Tier 2: a truthy `conditions` value on a Permission
+ * row is passed as `can()`'s third argument, matched by CASL's default
+ * matcher against a literal-comparison projection object callers build at
+ * the check site (see rbac/authorize.ts's assertCan() for single-record
+ * checks, and each Tier 2 service's list methods for the plain-TypeScript
+ * list-scoping branches - see plan §Data Safety Design B for why a generic
+ * condition-to-SQL translator was deliberately rejected in favor of this).
+ * A `null`/absent conditions value (every Foundation-era Permission row)
+ * keeps calling the unconditional 2-arg `can()` form, so this is additive,
+ * not a behavior change for existing roles.
  */
 @Injectable()
 export class CaslAbilityFactory {
@@ -54,7 +77,15 @@ export class CaslAbilityFactory {
         continue;
       }
 
-      can(permission.action.verb, permission.action.subject);
+      if (permission.conditions) {
+        (can as unknown as ConditionalCanBuilder)(
+          permission.action.verb,
+          permission.action.subject,
+          permission.conditions,
+        );
+      } else {
+        can(permission.action.verb, permission.action.subject);
+      }
     }
 
     return build();

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
+import { subject } from '@casl/ability';
 import { DatabaseModule } from '../../database/database.module';
 import { SchoolModule } from '../school/school.module';
 import { SchoolsRepository } from '../school/repositories/schools.repository';
@@ -235,6 +236,59 @@ describe('CaslAbilityFactory (integration)', () => {
     );
 
     expect(ability.can('manage', 'Thing')).toBe(false);
+  });
+
+  it('wires a Permission.conditions value into the built ability, matched via CASL conditions', async () => {
+    const { school, role, testModule } = await setUp();
+    const conditionalAction = await actions.save(
+      actions.create({
+        moduleId: testModule.id,
+        name: randomUUID(),
+        category: 'Test',
+        description: 'View a conditionally-restricted thing',
+        verb: 'view',
+        subject: 'RestrictedThing',
+      }),
+    );
+    await permissions.save(
+      permissions.create({
+        roleId: role.id,
+        actionId: conditionalAction.id,
+        conditions: { restricted: false },
+      }),
+    );
+
+    const ability = await abilityFactory.buildAbilityForRole(
+      school.id,
+      role.id,
+    );
+
+    // See casl-ability.factory.ts's ConditionalCanBuilder comment: AppAbility's
+    // subject slot is plain `string`, so instance-based checks need this cast.
+    expect(
+      ability.can(
+        'view',
+        subject('RestrictedThing', { restricted: false }) as unknown as string,
+      ),
+    ).toBe(true);
+    expect(
+      ability.can(
+        'view',
+        subject('RestrictedThing', { restricted: true }) as unknown as string,
+      ),
+    ).toBe(false);
+  });
+
+  it('a null/absent Permission.conditions value still grants unconditionally (no behavior change for existing roles)', async () => {
+    const { school, role } = await setUp();
+
+    const ability = await abilityFactory.buildAbilityForRole(
+      school.id,
+      role.id,
+    );
+
+    // setUp()'s permission has conditions: null (the Foundation-era default).
+    expect(ability.can('manage', 'Thing')).toBe(true);
   });
 
   it('returns an empty ability for a role with no permissions', async () => {
