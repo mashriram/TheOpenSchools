@@ -10,6 +10,9 @@ export class PermissionsRepository extends Repository<Permission> {
   }
 
   findByRole(roleId: string): Promise<Permission[]> {
-    return this.find({ where: { roleId }, relations: { action: true } });
+    return this.find({
+      where: { roleId },
+      relations: { action: { module: true } },
+    });
   }
 }

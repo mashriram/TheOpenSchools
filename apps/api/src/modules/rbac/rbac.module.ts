@@ -11,6 +11,10 @@ import { RolesRepository } from './repositories/roles.repository';
 import { PermissionsRepository } from './repositories/permissions.repository';
 import { SchoolModuleEnablementsRepository } from './repositories/school-module-enablements.repository';
 import { RbacCatalogSeeder } from './seed/rbac-catalog-seeder';
+import { CaslAbilityFactory } from './casl-ability.factory';
+import { PoliciesGuard } from './policies.guard';
+import { RbacService } from './rbac.service';
+import { RbacController } from './rbac.controller';
 
 @Module({
   imports: [
@@ -22,6 +26,7 @@ import { RbacCatalogSeeder } from './seed/rbac-catalog-seeder';
       SchoolModuleEnablement,
     ]),
   ],
+  controllers: [RbacController],
   providers: [
     PlatformModulesRepository,
     ActionsRepository,
@@ -29,6 +34,9 @@ import { RbacCatalogSeeder } from './seed/rbac-catalog-seeder';
     PermissionsRepository,
     SchoolModuleEnablementsRepository,
     RbacCatalogSeeder,
+    CaslAbilityFactory,
+    PoliciesGuard,
+    RbacService,
   ],
   exports: [
     PlatformModulesRepository,
@@ -37,6 +45,7 @@ import { RbacCatalogSeeder } from './seed/rbac-catalog-seeder';
     PermissionsRepository,
     SchoolModuleEnablementsRepository,
     RbacCatalogSeeder,
+    CaslAbilityFactory,
   ],
 })
 export class RbacModule {}
