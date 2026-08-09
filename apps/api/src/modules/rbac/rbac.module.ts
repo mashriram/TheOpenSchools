@@ -24,6 +24,7 @@ import { INDIVIDUAL_NEEDS_RBAC_CATALOG } from '../individual-needs/individual-ne
 import { STUDENT_ALERTS_RBAC_CATALOG } from '../student-alerts/student-alerts-rbac-catalog';
 import { BEHAVIOUR_RBAC_CATALOG } from '../behaviour/behaviour-rbac-catalog';
 import { FINANCE_RBAC_CATALOG } from '../finance/finance-rbac-catalog';
+import { CALENDAR_RBAC_CATALOG } from '../calendar/calendar-rbac-catalog';
 
 @Module({
   imports: [
@@ -86,6 +87,7 @@ export class RbacModule implements OnModuleInit {
       ...STUDENT_ALERTS_RBAC_CATALOG,
       ...BEHAVIOUR_RBAC_CATALOG,
       ...FINANCE_RBAC_CATALOG,
+      ...CALENDAR_RBAC_CATALOG,
     ]);
   }
 }

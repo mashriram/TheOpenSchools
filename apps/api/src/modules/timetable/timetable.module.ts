@@ -81,6 +81,9 @@ import { ScheduleController } from './schedule.controller';
     TimetableDayDatesRepository,
     TimetableDayRowClassesRepository,
     FacilityBookingsRepository,
+    // Tier 2, M22: Calendar's merged "my schedule" read-model reuses this
+    // directly rather than re-deriving scheduled periods itself.
+    TimetableReadModelService,
   ],
 })
 export class TimetableModule {}

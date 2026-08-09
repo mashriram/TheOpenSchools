@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { Between, DataSource, Repository } from 'typeorm';
 import { FacilityBooking } from '../entities/facility-booking.entity';
 
 @Injectable()
@@ -24,6 +24,19 @@ export class FacilityBookingsRepository extends Repository<FacilityBooking> {
       .orderBy('booking.date', 'ASC')
       .addOrderBy('booking.timeStart', 'ASC')
       .getMany();
+  }
+
+  /** Used by Calendar's merged "my schedule" read-model (plan §M22). */
+  findByPersonAndDateRange(
+    personId: string,
+    dateStart: string,
+    dateEnd: string,
+  ): Promise<FacilityBooking[]> {
+    return this.find({
+      where: { personId, date: Between(dateStart, dateEnd) },
+      relations: { space: true },
+      order: { date: 'ASC', timeStart: 'ASC' },
+    });
   }
 
   findByIdAndSchool(
