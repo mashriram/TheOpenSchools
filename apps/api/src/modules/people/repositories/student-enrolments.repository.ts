@@ -27,6 +27,19 @@ export class StudentEnrolmentsRepository extends Repository<StudentEnrolment> {
     return this.find({ where: { formGroupId } });
   }
 
+  /**
+   * Used by Messenger (M23) to resolve a YearGroup-type audience target.
+   * Scoped to a specific school year - YearGroup itself (unlike FormGroup)
+   * has no schoolYearId of its own, so without this filter a "Year 7"
+   * target would resolve to every historical year's Year 7 students.
+   */
+  findByYearGroupAndSchoolYear(
+    yearGroupId: string,
+    schoolYearId: string,
+  ): Promise<StudentEnrolment[]> {
+    return this.find({ where: { yearGroupId, schoolYearId } });
+  }
+
   findByPersonAndFormGroup(
     personId: string,
     formGroupId: string,

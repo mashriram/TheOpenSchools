@@ -19,4 +19,9 @@ export class PersonRolesRepository extends Repository<PersonRole> {
       relations: { role: true },
     });
   }
+
+  /** Used by Messenger (M23) to resolve a Role-type audience target. */
+  findByRole(roleId: string): Promise<PersonRole[]> {
+    return this.find({ where: { roleId } });
+  }
 }

@@ -1,6 +1,7 @@
 import {
   buildAttendanceLogPersonErasureFields,
   buildErasureFields,
+  buildMessengerReceiptErasureFields,
 } from './build-erasure-fields';
 
 describe('buildErasureFields', () => {
@@ -94,5 +95,23 @@ describe('buildAttendanceLogPersonErasureFields', () => {
     expect(fields).not.toHaveProperty('direction');
     expect(fields).not.toHaveProperty('date');
     expect(fields).not.toHaveProperty('personId');
+  });
+});
+
+describe('buildMessengerReceiptErasureFields', () => {
+  it('nulls only the recipient name snapshot', () => {
+    const fields = buildMessengerReceiptErasureFields();
+
+    expect(fields.recipientName).toBeNull();
+    expect(Object.keys(fields)).toEqual(['recipientName']);
+  });
+
+  it('does not touch the structural delivery fact (messengerId, confirmed)', () => {
+    const fields = buildMessengerReceiptErasureFields();
+
+    expect(fields).not.toHaveProperty('messengerId');
+    expect(fields).not.toHaveProperty('personId');
+    expect(fields).not.toHaveProperty('confirmed');
+    expect(fields).not.toHaveProperty('confirmedTimestamp');
   });
 });

@@ -25,6 +25,7 @@ import { StudentAlertsModule } from './modules/student-alerts/student-alerts.mod
 import { BehaviourModule } from './modules/behaviour/behaviour.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
+import { MessengerModule } from './modules/messenger/messenger.module';
 import { RequestContextInterceptor } from './common/request-context.interceptor';
 
 @Module({
@@ -46,6 +47,7 @@ import { RequestContextInterceptor } from './common/request-context.interceptor'
     BehaviourModule,
     FinanceModule,
     CalendarModule,
+    MessengerModule,
   ],
   controllers: [AppController],
   providers: [

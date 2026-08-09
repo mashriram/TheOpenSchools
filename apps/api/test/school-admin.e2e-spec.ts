@@ -318,18 +318,25 @@ describe('School Admin (e2e)', () => {
       expect(response.status).toBe(409);
     });
 
-    it('already has the two Foundation defaults seeded at signup', async () => {
+    it('already has the Foundation/Tier 2 defaults seeded at signup', async () => {
       const { auth } = await signUpAdmin();
 
       const response = await request(app.getHttpServer())
         .get('/school-admin/settings')
         .set(auth);
 
+      // Tier 2, M23 added 'retentionWindowMonths' (Messenger's retention
+      // window - see buildDefaultSettings' doc comment) alongside the two
+      // original Foundation defaults.
       expect(
         body<{ name: string }[]>(response)
           .map((s) => s.name)
           .sort(),
-      ).toEqual(['organisationEmail', 'organisationName']);
+      ).toEqual([
+        'organisationEmail',
+        'organisationName',
+        'retentionWindowMonths',
+      ]);
     });
   });
 

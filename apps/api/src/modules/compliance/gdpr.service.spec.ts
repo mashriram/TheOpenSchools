@@ -16,6 +16,9 @@ import { BehaviourLetterSnapshotsRepository } from '../behaviour/repositories/be
 import { BehaviourLetterRecipientsRepository } from '../behaviour/repositories/behaviour-letter-recipients.repository';
 import { BehaviourService } from '../behaviour/behaviour.service';
 import { BehaviourLettersService } from '../behaviour/behaviour-letters.service';
+import { MessengerModule } from '../messenger/messenger.module';
+import { MessengerService } from '../messenger/messenger.service';
+import { MessengerReceiptsRepository } from '../messenger/repositories/messenger-receipts.repository';
 import { FamiliesRepository } from '../people/repositories/families.repository';
 import { FamilyAdultsRepository } from '../people/repositories/family-adults.repository';
 import { FamilyChildrenRepository } from '../people/repositories/family-children.repository';
@@ -54,6 +57,8 @@ describe('GdprService (integration)', () => {
   let familyChildren: FamilyChildrenRepository;
   let behaviourService: BehaviourService;
   let behaviourLettersService: BehaviourLettersService;
+  let messengerService: MessengerService;
+  let messengerReceipts: MessengerReceiptsRepository;
   let service: GdprService;
   let createdSchoolIds: string[];
 
@@ -69,6 +74,7 @@ describe('GdprService (integration)', () => {
         ComplianceModule,
         AttendanceModule,
         BehaviourModule,
+        MessengerModule,
       ],
     }).compile();
 
@@ -92,6 +98,8 @@ describe('GdprService (integration)', () => {
     familyChildren = module.get(FamilyChildrenRepository);
     behaviourService = module.get(BehaviourService);
     behaviourLettersService = module.get(BehaviourLettersService);
+    messengerService = module.get(MessengerService);
+    messengerReceipts = module.get(MessengerReceiptsRepository);
     service = module.get(GdprService);
   });
 
@@ -404,6 +412,47 @@ describe('GdprService (integration)', () => {
         },
       );
       expect(snapshotAfterParentErasure!.id).toBe(snapshot.id);
+    });
+
+    // Named regression test (plan §F / M23): proves Messenger's recipient
+    // name snapshot participates in GDPR erasure - the fix for Gibbon's
+    // real gap where `recipientList` is silently exempted from any
+    // erasure path. The structural receipt row (messengerId/personId/
+    // confirmed) is kept, since deleting it would corrupt the message's
+    // delivery/read-receipt history.
+    it('nulls a recipient’s message receipt name snapshot without deleting the receipt row', async () => {
+      const { school, person } = await createFixture();
+      const [schoolYear] = await schoolYears.findBySchool(school.id);
+      const admin = await people.save(
+        people.create({
+          schoolId: school.id,
+          surname: 'Admin',
+          firstName: 'A',
+        }),
+      );
+      const message = await messengerService.create(school.id, admin.id, {
+        schoolYearId: schoolYear.id,
+        subject: 'Reminder',
+        body: 'Please remember your kit tomorrow.',
+        targets: [{ targetType: 'Person', targetId: person.id }],
+      });
+      const receiptBefore = await messengerReceipts.findByMessengerAndPerson(
+        message.id,
+        person.id,
+      );
+      expect(receiptBefore!.recipientName).toBe(
+        `${person.firstName} ${person.surname}`,
+      );
+
+      await service.requestErasure(school.id, person.id);
+
+      const receiptAfter = await messengerReceipts.findByMessengerAndPerson(
+        message.id,
+        person.id,
+      );
+      expect(receiptAfter!.recipientName).toBeNull();
+      expect(receiptAfter!.id).toBe(receiptBefore!.id);
+      expect(receiptAfter!.messengerId).toBe(message.id);
     });
   });
 

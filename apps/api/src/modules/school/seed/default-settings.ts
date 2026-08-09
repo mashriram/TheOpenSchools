@@ -34,5 +34,19 @@ export function buildDefaultSettings(
       description: 'The main contact email address for the school.',
       value: organisationEmail,
     },
+    {
+      // Tier 2, M23: Gibbon has zero retention coverage for Messenger at
+      // all - this is a genuinely new capability, not parity. Nullable-by-
+      // absence would silently mean "forever"; seeding an explicit default
+      // (schools can change/clear it via the existing Settings CRUD) makes
+      // the retention window visible and configurable from day one,
+      // matching Finance's `retentionPeriodMonths` design (plan §F).
+      scope: 'Messenger',
+      name: 'retentionWindowMonths',
+      nameDisplay: 'Message Retention Window (months)',
+      description:
+        'Message subjects/bodies older than this are scrubbed by the retention job. Leave blank to disable scrubbing.',
+      value: '24',
+    },
   ];
 }

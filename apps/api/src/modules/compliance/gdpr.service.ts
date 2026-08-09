@@ -16,6 +16,7 @@ import { AttendanceLogPerson } from '../attendance/entities/attendance-log-perso
 import { Behaviour } from '../behaviour/entities/behaviour.entity';
 import { BehaviourLetterSnapshot } from '../behaviour/entities/behaviour-letter-snapshot.entity';
 import { BehaviourLetterRecipient } from '../behaviour/entities/behaviour-letter-recipient.entity';
+import { MessengerReceipt } from '../messenger/entities/messenger-receipt.entity';
 import { Person } from '../people/entities/person.entity';
 import { PersonCredential } from '../people/entities/person-credential.entity';
 import { PersonPhone } from '../people/entities/person-phone.entity';
@@ -31,6 +32,7 @@ import {
   buildBehaviourLetterRecipientErasureFields,
   buildBehaviourLetterSnapshotErasureFields,
   buildErasureFields,
+  buildMessengerReceiptErasureFields,
 } from './build-erasure-fields';
 
 @Injectable()
@@ -178,6 +180,14 @@ export class GdprService {
       await manager
         .getRepository(BehaviourLetterRecipient)
         .update({ personId }, buildBehaviourLetterRecipientErasureFields());
+
+      // Tier 2, M23: this recipient's send-time name snapshot only - see
+      // buildMessengerReceiptErasureFields' doc comment for why message
+      // content itself is a separate, time-based retention mechanism
+      // rather than personId-keyed erasure.
+      await manager
+        .getRepository(MessengerReceipt)
+        .update({ personId }, buildMessengerReceiptErasureFields());
 
       await this.auditService.record(manager, {
         action: 'erase',

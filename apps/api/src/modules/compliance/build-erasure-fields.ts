@@ -3,6 +3,7 @@ import { AttendanceLogPerson } from '../attendance/entities/attendance-log-perso
 import { Behaviour } from '../behaviour/entities/behaviour.entity';
 import { BehaviourLetterSnapshot } from '../behaviour/entities/behaviour-letter-snapshot.entity';
 import { BehaviourLetterRecipient } from '../behaviour/entities/behaviour-letter-recipient.entity';
+import { MessengerReceipt } from '../messenger/entities/messenger-receipt.entity';
 
 /**
  * The fixed-up version of Gibbon's ScrubbableGateway pattern (per the
@@ -119,4 +120,24 @@ export function buildBehaviourLetterRecipientErasureFields(): Pick<
   'name' | 'email'
 > {
   return { name: null, email: null };
+}
+
+/**
+ * Tier 2, M23: nulls one recipient's send-time name snapshot when *they*
+ * are erased - same reasoning and shape as
+ * buildBehaviourLetterRecipientErasureFields above. The structural
+ * personId/confirmed/confirmedTimestamp fields are left alone: they're
+ * delivery/read-receipt facts, not personal narrative content, and
+ * deleting the row outright would silently corrupt the message's
+ * recipient-count history. Message *content* (Messenger.subject/body) is
+ * deliberately NOT part of personId-keyed erasure - a broadcast message
+ * has no single "this is about person X" owner the way Behaviour/Alert
+ * records do, so it participates in the time-based retention window
+ * instead (see MessengerRetentionService).
+ */
+export function buildMessengerReceiptErasureFields(): Pick<
+  MessengerReceipt,
+  'recipientName'
+> {
+  return { recipientName: null };
 }
