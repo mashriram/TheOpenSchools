@@ -22,6 +22,7 @@ import { ATTENDANCE_RBAC_CATALOG } from '../src/modules/attendance/attendance-rb
 import { INDIVIDUAL_NEEDS_RBAC_CATALOG } from '../src/modules/individual-needs/individual-needs-rbac-catalog';
 import { STUDENT_ALERTS_RBAC_CATALOG } from '../src/modules/student-alerts/student-alerts-rbac-catalog';
 import { BEHAVIOUR_RBAC_CATALOG } from '../src/modules/behaviour/behaviour-rbac-catalog';
+import { FINANCE_RBAC_CATALOG } from '../src/modules/finance/finance-rbac-catalog';
 import { HashingService } from '../src/modules/auth/hashing.service';
 
 const PASSWORD = 'correct-horse-battery-staple';
@@ -242,6 +243,7 @@ describe('RBAC (e2e)', () => {
       ...INDIVIDUAL_NEEDS_RBAC_CATALOG,
       ...STUDENT_ALERTS_RBAC_CATALOG,
       ...BEHAVIOUR_RBAC_CATALOG,
+      ...FINANCE_RBAC_CATALOG,
     ]
       .flatMap((platformModule) => platformModule.actions)
       .filter((action) => action[flag])

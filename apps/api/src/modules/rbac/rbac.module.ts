@@ -23,6 +23,7 @@ import { ATTENDANCE_RBAC_CATALOG } from '../attendance/attendance-rbac-catalog';
 import { INDIVIDUAL_NEEDS_RBAC_CATALOG } from '../individual-needs/individual-needs-rbac-catalog';
 import { STUDENT_ALERTS_RBAC_CATALOG } from '../student-alerts/student-alerts-rbac-catalog';
 import { BEHAVIOUR_RBAC_CATALOG } from '../behaviour/behaviour-rbac-catalog';
+import { FINANCE_RBAC_CATALOG } from '../finance/finance-rbac-catalog';
 
 @Module({
   imports: [
@@ -84,6 +85,7 @@ export class RbacModule implements OnModuleInit {
       ...INDIVIDUAL_NEEDS_RBAC_CATALOG,
       ...STUDENT_ALERTS_RBAC_CATALOG,
       ...BEHAVIOUR_RBAC_CATALOG,
+      ...FINANCE_RBAC_CATALOG,
     ]);
   }
 }
