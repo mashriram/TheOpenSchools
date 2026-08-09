@@ -185,7 +185,13 @@ describe('Student Alerts (e2e)', () => {
     };
   }
 
-  describe('Real Gibbon bug #1: adminOnly must gate viewing, not just the creation dropdown', () => {
+  // Part of the "Data Safety Regression Suite" named in plan §M26 -
+  // `git grep "Data Safety Regression"` finds every test in this group
+  // across the repo (student-alerts.e2e-spec.ts's two Alert bugs below,
+  // plus gdpr.service.spec.ts's Behaviour-letter independent-retention
+  // test) so none of them can silently disappear in a future refactor
+  // without the search turning up one fewer result than expected.
+  describe('[Data Safety Regression] Real Gibbon bug #1: adminOnly must gate viewing, not just the creation dropdown', () => {
     it('never returns an admin-only alert to a default Teacher login, not even in a list', async () => {
       const { auth, school } = await signUpAdmin();
       const [year] = await schoolYears.findBySchool(school.id);
@@ -288,7 +294,9 @@ describe('Student Alerts (e2e)', () => {
     });
   });
 
-  describe('Real Gibbon bug #2: no badge endpoint may ever embed raw comment content', () => {
+  // Part of the "Data Safety Regression Suite" (plan §M26) - see the
+  // matching comment above bug #1's describe block.
+  describe('[Data Safety Regression] Real Gibbon bug #2: no badge endpoint may ever embed raw comment content', () => {
     it('returns badges with no comment field, and excludes admin-only alerts for a Teacher login', async () => {
       const { auth, school } = await signUpAdmin();
       const [year] = await schoolYears.findBySchool(school.id);

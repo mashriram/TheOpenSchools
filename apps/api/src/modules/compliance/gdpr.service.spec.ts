@@ -311,13 +311,16 @@ describe('GdprService (integration)', () => {
       expect(erasedLog!.date).toBe('2026-09-01');
     });
 
-    // Named regression test (plan §Data Safety Design F / M20): the
-    // Behaviour letter snapshot has an INDEPENDENT retention lifecycle
-    // from its source Behaviour record - scrubbing one must never affect
-    // the other. Fixes Gibbon's real bug where the source record could be
-    // scrubbed via the retention tool while the letter kept a permanent,
-    // unrelated plaintext copy forever.
-    it('gives the behaviour letter snapshot an independent retention lifecycle from its source record', async () => {
+    // Part of the "Data Safety Regression Suite" (plan §M26) -
+    // `git grep "Data Safety Regression"` finds every test in this group,
+    // including student-alerts.e2e-spec.ts's two Alert bugs, so none can
+    // silently disappear in a future refactor. This one (plan §Data
+    // Safety Design F / M20): the Behaviour letter snapshot has an
+    // INDEPENDENT retention lifecycle from its source Behaviour record -
+    // scrubbing one must never affect the other. Fixes Gibbon's real bug
+    // where the source record could be scrubbed via the retention tool
+    // while the letter kept a permanent, unrelated plaintext copy forever.
+    it('[Data Safety Regression] gives the behaviour letter snapshot an independent retention lifecycle from its source record', async () => {
       const school = await schools.save(
         schools.create({ name: 'Test School', subdomainSlug: randomUUID() }),
       );
