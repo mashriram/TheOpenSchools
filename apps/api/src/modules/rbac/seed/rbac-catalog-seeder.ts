@@ -71,6 +71,7 @@ export class RbacCatalogSeeder {
       defaultPermissionStudent: seed.defaultPermissionStudent ?? false,
       defaultPermissionParent: seed.defaultPermissionParent ?? false,
       defaultPermissionSupport: seed.defaultPermissionSupport ?? false,
+      defaultConditions: seed.defaultConditions ?? null,
       categoryPermissionStaff: seed.categoryPermissionStaff ?? true,
       categoryPermissionStudent: seed.categoryPermissionStudent ?? true,
       categoryPermissionParent: seed.categoryPermissionParent ?? true,

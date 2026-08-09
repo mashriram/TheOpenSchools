@@ -77,6 +77,23 @@ export class Action extends SoftDeletableEntity {
   @Column({ type: 'boolean', default: false })
   defaultPermissionSupport: boolean;
 
+  /**
+   * Tier 2, M19: the fixed conditions this action's default grant carries,
+   * applied uniformly to whichever role(s) receive it via the
+   * defaultPermission* flags above (e.g. a `studentAlerts.alerts.
+   * viewNonRestricted` action seeded with `{ alertTypeAdminOnly: false }`).
+   * Unlike Permission.conditions (a per-grant value, still unused for
+   * manually-edited custom-role permissions), this is a property of the
+   * action itself - Gibbon's real design also splits a single conceptual
+   * permission into several fixed-scope named actions
+   * (`_all`/`_myChildren`/`_my`) rather than one action with a
+   * role-varying condition. Null for every action that doesn't need scope
+   * restriction (the overwhelming majority) - zero behavior change for
+   * Foundation/M14-M18's existing catalogs.
+   */
+  @Column({ type: 'json', nullable: true })
+  defaultConditions: Record<string, unknown> | null;
+
   @Column({ type: 'boolean', default: true })
   categoryPermissionStaff: boolean;
 

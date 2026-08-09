@@ -211,7 +211,11 @@ export class SignupService {
       if (grantedActions.length > 0) {
         await permissionsRepo.save(
           grantedActions.map((action) =>
-            permissionsRepo.create({ roleId: role.id, actionId: action.id }),
+            permissionsRepo.create({
+              roleId: role.id,
+              actionId: action.id,
+              conditions: action.defaultConditions ?? null,
+            }),
           ),
         );
       }

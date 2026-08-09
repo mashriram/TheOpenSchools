@@ -20,6 +20,7 @@ import { TIMETABLE_RBAC_CATALOG } from '../src/modules/timetable/timetable-rbac-
 import { MARKBOOK_RBAC_CATALOG } from '../src/modules/markbook/markbook-rbac-catalog';
 import { ATTENDANCE_RBAC_CATALOG } from '../src/modules/attendance/attendance-rbac-catalog';
 import { INDIVIDUAL_NEEDS_RBAC_CATALOG } from '../src/modules/individual-needs/individual-needs-rbac-catalog';
+import { STUDENT_ALERTS_RBAC_CATALOG } from '../src/modules/student-alerts/student-alerts-rbac-catalog';
 import { HashingService } from '../src/modules/auth/hashing.service';
 
 const PASSWORD = 'correct-horse-battery-staple';
@@ -238,6 +239,7 @@ describe('RBAC (e2e)', () => {
       ...MARKBOOK_RBAC_CATALOG,
       ...ATTENDANCE_RBAC_CATALOG,
       ...INDIVIDUAL_NEEDS_RBAC_CATALOG,
+      ...STUDENT_ALERTS_RBAC_CATALOG,
     ]
       .flatMap((platformModule) => platformModule.actions)
       .filter((action) => action[flag])

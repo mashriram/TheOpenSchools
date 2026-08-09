@@ -67,6 +67,12 @@ export const SENSITIVE_FIELDS_BY_ENTITY: Record<string, EntitySensitiveFields> =
         'comment',
       ]),
     },
+    // Tier 2, M19: omit rather than encrypt, unlike Behaviour/Individual
+    // Needs - per plan §Data Safety Design D, alerts are simpler flag+
+    // comment records with no real forensic-history need; the audit log
+    // records that an alert's comment changed, never what it changed to
+    // or from.
+    Alert: { omit: new Set(['comment', 'notesStatus']) },
   };
 
 /**

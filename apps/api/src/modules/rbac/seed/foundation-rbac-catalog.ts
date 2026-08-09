@@ -15,6 +15,8 @@ export interface FoundationActionSeed {
   defaultPermissionStudent?: boolean;
   defaultPermissionParent?: boolean;
   defaultPermissionSupport?: boolean;
+  /** See Action.defaultConditions' doc comment. */
+  defaultConditions?: Record<string, unknown> | null;
   categoryPermissionStaff?: boolean;
   categoryPermissionStudent?: boolean;
   categoryPermissionParent?: boolean;
