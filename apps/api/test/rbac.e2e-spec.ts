@@ -5,6 +5,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { SchoolsRepository } from '../src/modules/school/repositories/schools.repository';
+import { SchoolYearsRepository } from '../src/modules/school/repositories/school-years.repository';
 import { PeopleRepository } from '../src/modules/people/repositories/people.repository';
 import { PersonCredentialsRepository } from '../src/modules/people/repositories/person-credentials.repository';
 import { PersonRolesRepository } from '../src/modules/people/repositories/person-roles.repository';
@@ -40,6 +41,7 @@ function body<T>(response: request.Response): T {
 describe('RBAC (e2e)', () => {
   let app: INestApplication<App>;
   let schools: SchoolsRepository;
+  let schoolYears: SchoolYearsRepository;
   let people: PeopleRepository;
   let personCredentials: PersonCredentialsRepository;
   let personRoles: PersonRolesRepository;
@@ -61,6 +63,7 @@ describe('RBAC (e2e)', () => {
     await app.init();
 
     schools = moduleFixture.get(SchoolsRepository);
+    schoolYears = moduleFixture.get(SchoolYearsRepository);
     people = moduleFixture.get(PeopleRepository);
     personCredentials = moduleFixture.get(PersonCredentialsRepository);
     personRoles = moduleFixture.get(PersonRolesRepository);
@@ -293,6 +296,49 @@ describe('RBAC (e2e)', () => {
 
     it('rejects an unauthenticated request', async () => {
       const response = await request(app.getHttpServer()).get('/me/abilities');
+
+      expect(response.status).toBe(401);
+    });
+  });
+
+  // Tier 2 (M25): SchoolYearsRepository.findCurrentForSchool() existed
+  // since Foundation but was never reachable over HTTP - this frontend
+  // vertical slice surfaced the gap (Timetable/Attendance/Calendar pages
+  // all need "what's the current school year" and had no way to get it).
+  describe('GET /me/current-school-year', () => {
+    it("returns the school's current school year for any authenticated user", async () => {
+      const { school, adminEmail, teacherEmail } =
+        await seedSchoolWithAdminAndTeacher();
+      await schoolYears.save(
+        schoolYears.create({
+          schoolId: school.id,
+          name: '2026-27',
+          status: 'Current',
+          sequenceNumber: 1,
+        }),
+      );
+      const accessToken = await loginAs(school.subdomainSlug, teacherEmail);
+
+      const response = await request(app.getHttpServer())
+        .get('/me/current-school-year')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(200);
+      const schoolYear = body<{ id: string; status: string }>(response);
+      expect(schoolYear.status).toBe('Current');
+
+      // Same value regardless of who's asking - self-scoped, not role-gated.
+      const adminAccessToken = await loginAs(school.subdomainSlug, adminEmail);
+      const adminResponse = await request(app.getHttpServer())
+        .get('/me/current-school-year')
+        .set('Authorization', `Bearer ${adminAccessToken}`);
+      expect(body<{ id: string }>(adminResponse).id).toBe(schoolYear.id);
+    });
+
+    it('rejects an unauthenticated request', async () => {
+      const response = await request(app.getHttpServer()).get(
+        '/me/current-school-year',
+      );
 
       expect(response.status).toBe(401);
     });
