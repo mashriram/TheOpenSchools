@@ -22,6 +22,7 @@ import { MARKBOOK_RBAC_CATALOG } from '../markbook/markbook-rbac-catalog';
 import { ATTENDANCE_RBAC_CATALOG } from '../attendance/attendance-rbac-catalog';
 import { INDIVIDUAL_NEEDS_RBAC_CATALOG } from '../individual-needs/individual-needs-rbac-catalog';
 import { STUDENT_ALERTS_RBAC_CATALOG } from '../student-alerts/student-alerts-rbac-catalog';
+import { BEHAVIOUR_RBAC_CATALOG } from '../behaviour/behaviour-rbac-catalog';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ export class RbacModule implements OnModuleInit {
       ...ATTENDANCE_RBAC_CATALOG,
       ...INDIVIDUAL_NEEDS_RBAC_CATALOG,
       ...STUDENT_ALERTS_RBAC_CATALOG,
+      ...BEHAVIOUR_RBAC_CATALOG,
     ]);
   }
 }

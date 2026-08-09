@@ -1,5 +1,8 @@
 import { Person } from '../people/entities/person.entity';
 import { AttendanceLogPerson } from '../attendance/entities/attendance-log-person.entity';
+import { Behaviour } from '../behaviour/entities/behaviour.entity';
+import { BehaviourLetterSnapshot } from '../behaviour/entities/behaviour-letter-snapshot.entity';
+import { BehaviourLetterRecipient } from '../behaviour/entities/behaviour-letter-recipient.entity';
 
 /**
  * The fixed-up version of Gibbon's ScrubbableGateway pattern (per the
@@ -72,4 +75,48 @@ export function buildAttendanceLogPersonErasureFields(): Pick<
     reason: null,
     comment: null,
   };
+}
+
+/**
+ * Tier 2, M20: nulls the Tier C narrative fields for the erased person's
+ * own Behaviour records, keeping the structural fact (type/descriptor/
+ * date) intact - same reasoning as Attendance's erasure above (a school's
+ * disciplinary-record-exists fact commonly has its own retention
+ * requirement independent of the free-text detail).
+ */
+export function buildBehaviourErasureFields(): Pick<
+  Behaviour,
+  'comment' | 'followup'
+> {
+  return {
+    comment: null,
+    followup: null,
+  };
+}
+
+/**
+ * Tier 2, M20: nulls the immutable letter snapshot's body when the
+ * *subject* student is erased - see BehaviourLetterSnapshot's doc comment
+ * for why this is a real column update (an exceptional GDPR-erasure write
+ * path), not a violation of "immutable in normal operation."
+ */
+export function buildBehaviourLetterSnapshotErasureFields(): Pick<
+  BehaviourLetterSnapshot,
+  'body'
+> {
+  return { body: null };
+}
+
+/**
+ * Tier 2, M20: nulls one recipient's snapshotted name/email when *they*
+ * (a parent/recipient, not the subject student) are erased - the real fix
+ * for the gap the plan calls out directly: Gibbon's `recipientList` blob
+ * is silently exempted from any erasure path; here it's a normal indexed
+ * per-recipient row update.
+ */
+export function buildBehaviourLetterRecipientErasureFields(): Pick<
+  BehaviourLetterRecipient,
+  'name' | 'email'
+> {
+  return { name: null, email: null };
 }

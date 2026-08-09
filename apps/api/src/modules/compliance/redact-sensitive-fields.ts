@@ -73,6 +73,16 @@ export const SENSITIVE_FIELDS_BY_ENTITY: Record<string, EntitySensitiveFields> =
     // records that an alert's comment changed, never what it changed to
     // or from.
     Alert: { omit: new Set(['comment', 'notesStatus']) },
+    // Tier 2, M20: encrypt, not omit - a safeguarding lead has a real need
+    // to know whether an incident's comment/followup was altered after
+    // the fact.
+    Behaviour: { encrypt: new Set(['comment', 'followup']) },
+    BehaviourFollowUp: { encrypt: new Set(['followUp']) },
+    // The letter snapshot is immutable in normal operation, but the audit
+    // log still needs the same encrypt treatment for the one legitimate
+    // write path (GDPR erasure nulling `body`) to avoid logging plaintext.
+    BehaviourLetterSnapshot: { encrypt: new Set(['body']) },
+    BehaviourLetterRecipient: { encrypt: new Set(['name', 'email']) },
   };
 
 /**

@@ -13,6 +13,9 @@ import { StudentEnrolmentsRepository } from '../people/repositories/student-enro
 import { FamilyAdultsRepository } from '../people/repositories/family-adults.repository';
 import { FamilyChildrenRepository } from '../people/repositories/family-children.repository';
 import { AttendanceLogPerson } from '../attendance/entities/attendance-log-person.entity';
+import { Behaviour } from '../behaviour/entities/behaviour.entity';
+import { BehaviourLetterSnapshot } from '../behaviour/entities/behaviour-letter-snapshot.entity';
+import { BehaviourLetterRecipient } from '../behaviour/entities/behaviour-letter-recipient.entity';
 import { Person } from '../people/entities/person.entity';
 import { PersonCredential } from '../people/entities/person-credential.entity';
 import { PersonPhone } from '../people/entities/person-phone.entity';
@@ -24,6 +27,9 @@ import { ConsentRecordsRepository } from './repositories/consent-records.reposit
 import { ConsentRecord } from './entities/consent-record.entity';
 import {
   buildAttendanceLogPersonErasureFields,
+  buildBehaviourErasureFields,
+  buildBehaviourLetterRecipientErasureFields,
+  buildBehaviourLetterSnapshotErasureFields,
   buildErasureFields,
 } from './build-erasure-fields';
 
@@ -155,6 +161,23 @@ export class GdprService {
       await manager
         .getRepository(AttendanceLogPerson)
         .update({ personId }, buildAttendanceLogPersonErasureFields());
+
+      // Tier 2, M20: three independent write paths, mirroring
+      // BehaviourLetterSnapshot's doc comment - the source Behaviour
+      // record's narrative, the letter snapshot's body (when this person
+      // is the subject student), and this person's own recipient row on
+      // any letter (when they were a parent who received one) all get
+      // scrubbed independently. Fixes Gibbon's real gap where the letter
+      // recipientList is silently exempted from any erasure path.
+      await manager
+        .getRepository(Behaviour)
+        .update({ personId }, buildBehaviourErasureFields());
+      await manager
+        .getRepository(BehaviourLetterSnapshot)
+        .update({ personId }, buildBehaviourLetterSnapshotErasureFields());
+      await manager
+        .getRepository(BehaviourLetterRecipient)
+        .update({ personId }, buildBehaviourLetterRecipientErasureFields());
 
       await this.auditService.record(manager, {
         action: 'erase',

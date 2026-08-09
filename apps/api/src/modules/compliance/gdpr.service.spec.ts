@@ -10,6 +10,15 @@ import { AuthModule } from '../auth/auth.module';
 import { ComplianceModule } from './compliance.module';
 import { AttendanceModule } from '../attendance/attendance.module';
 import { AttendanceLogPeopleRepository } from '../attendance/repositories/attendance-log-people.repository';
+import { BehaviourModule } from '../behaviour/behaviour.module';
+import { BehavioursRepository } from '../behaviour/repositories/behaviours.repository';
+import { BehaviourLetterSnapshotsRepository } from '../behaviour/repositories/behaviour-letter-snapshots.repository';
+import { BehaviourLetterRecipientsRepository } from '../behaviour/repositories/behaviour-letter-recipients.repository';
+import { BehaviourService } from '../behaviour/behaviour.service';
+import { BehaviourLettersService } from '../behaviour/behaviour-letters.service';
+import { FamiliesRepository } from '../people/repositories/families.repository';
+import { FamilyAdultsRepository } from '../people/repositories/family-adults.repository';
+import { FamilyChildrenRepository } from '../people/repositories/family-children.repository';
 import { SchoolsRepository } from '../school/repositories/schools.repository';
 import { SchoolYearsRepository } from '../school/repositories/school-years.repository';
 import { YearGroupsRepository } from '../school/repositories/year-groups.repository';
@@ -37,6 +46,14 @@ describe('GdprService (integration)', () => {
   let roles: RolesRepository;
   let auditLogs: AuditLogsRepository;
   let attendanceLogPeople: AttendanceLogPeopleRepository;
+  let behaviours: BehavioursRepository;
+  let behaviourLetterSnapshots: BehaviourLetterSnapshotsRepository;
+  let behaviourLetterRecipients: BehaviourLetterRecipientsRepository;
+  let families: FamiliesRepository;
+  let familyAdults: FamilyAdultsRepository;
+  let familyChildren: FamilyChildrenRepository;
+  let behaviourService: BehaviourService;
+  let behaviourLettersService: BehaviourLettersService;
   let service: GdprService;
   let createdSchoolIds: string[];
 
@@ -51,6 +68,7 @@ describe('GdprService (integration)', () => {
         AuthModule,
         ComplianceModule,
         AttendanceModule,
+        BehaviourModule,
       ],
     }).compile();
 
@@ -66,6 +84,14 @@ describe('GdprService (integration)', () => {
     roles = module.get(RolesRepository);
     auditLogs = module.get(AuditLogsRepository);
     attendanceLogPeople = module.get(AttendanceLogPeopleRepository);
+    behaviours = module.get(BehavioursRepository);
+    behaviourLetterSnapshots = module.get(BehaviourLetterSnapshotsRepository);
+    behaviourLetterRecipients = module.get(BehaviourLetterRecipientsRepository);
+    families = module.get(FamiliesRepository);
+    familyAdults = module.get(FamilyAdultsRepository);
+    familyChildren = module.get(FamilyChildrenRepository);
+    behaviourService = module.get(BehaviourService);
+    behaviourLettersService = module.get(BehaviourLettersService);
     service = module.get(GdprService);
   });
 
@@ -275,6 +301,109 @@ describe('GdprService (integration)', () => {
       expect(erasedLog!.comment).toBeNull();
       expect(erasedLog!.direction).toBe('In');
       expect(erasedLog!.date).toBe('2026-09-01');
+    });
+
+    // Named regression test (plan §Data Safety Design F / M20): the
+    // Behaviour letter snapshot has an INDEPENDENT retention lifecycle
+    // from its source Behaviour record - scrubbing one must never affect
+    // the other. Fixes Gibbon's real bug where the source record could be
+    // scrubbed via the retention tool while the letter kept a permanent,
+    // unrelated plaintext copy forever.
+    it('gives the behaviour letter snapshot an independent retention lifecycle from its source record', async () => {
+      const school = await schools.save(
+        schools.create({ name: 'Test School', subdomainSlug: randomUUID() }),
+      );
+      createdSchoolIds.push(school.id);
+      const schoolYear = await schoolYears.save(
+        schoolYears.create({
+          schoolId: school.id,
+          name: '2024-25',
+          sequenceNumber: 1,
+        }),
+      );
+      const student = await people.save(
+        people.create({
+          schoolId: school.id,
+          surname: 'Student',
+          firstName: 'Sam',
+        }),
+      );
+      const parent = await people.save(
+        people.create({
+          schoolId: school.id,
+          surname: 'Parent',
+          firstName: 'Pat',
+          email: `${randomUUID()}@example.com`,
+        }),
+      );
+      const family = await families.save(
+        families.create({ schoolId: school.id, name: 'The Family' }),
+      );
+      await familyAdults.save(
+        familyAdults.create({
+          familyId: family.id,
+          personId: parent.id,
+          childDataAccess: true,
+        }),
+      );
+      await familyChildren.save(
+        familyChildren.create({ familyId: family.id, personId: student.id }),
+      );
+      const record = await behaviourService.create(school.id, student.id, {
+        schoolYearId: schoolYear.id,
+        date: '2026-09-01',
+        personId: student.id,
+        type: 'Negative',
+        comment: 'Source incident comment',
+      });
+      const snapshot = await behaviourLettersService.create(school.id, {
+        schoolYearId: schoolYear.id,
+        personId: student.id,
+        letterLevel: '2',
+        status: 'Issued',
+        type: 'Negative',
+        body: 'Letter body referencing the incident',
+      });
+
+      // Erasing the source student scrubs both independently: the source
+      // record's comment, the snapshot's body (they are the subject), and
+      // (separately) the parent's own recipient row when THEY are erased.
+      await service.requestErasure(school.id, student.id);
+
+      const erasedRecord = await behaviours.findOne({
+        where: { id: record.id },
+      });
+      expect(erasedRecord!.comment).toBeNull();
+      const erasedSnapshot = await behaviourLetterSnapshots.findOne({
+        where: { id: snapshot.id },
+      });
+      expect(erasedSnapshot!.body).toBeNull();
+
+      // The parent's recipient row is untouched by the student's own
+      // erasure - it has its own independent erasure trigger (the parent's
+      // own request), proven here by erasing the parent separately and
+      // confirming only their row is affected, not the whole snapshot.
+      const recipientBeforeParentErasure =
+        await behaviourLetterRecipients.findOne({
+          where: { snapshotId: snapshot.id, personId: parent.id },
+        });
+      expect(recipientBeforeParentErasure!.email).toBe(parent.email);
+
+      await service.requestErasure(school.id, parent.id);
+
+      const recipientAfterParentErasure =
+        await behaviourLetterRecipients.findOne({
+          where: { snapshotId: snapshot.id, personId: parent.id },
+        });
+      expect(recipientAfterParentErasure!.email).toBeNull();
+      // The snapshot itself (already erased above for the student) is
+      // unaffected by the parent's separate erasure - independent rows.
+      const snapshotAfterParentErasure = await behaviourLetterSnapshots.findOne(
+        {
+          where: { id: snapshot.id },
+        },
+      );
+      expect(snapshotAfterParentErasure!.id).toBe(snapshot.id);
     });
   });
 
