@@ -75,6 +75,16 @@ export async function loadFoundationData(
     familyAdults: data.familyAdults.length,
     familyChildren: data.familyChildren.length,
     settings: data.settings.length,
+    departments: data.departments.length,
+    courses: data.courses.length,
+    courseClasses: data.courseClasses.length,
+    courseClassPeople: data.courseClassPeople.length,
+    scales: data.scales.length,
+    scaleGrades: data.scaleGrades.length,
+    attendanceCodes: data.attendanceCodes.length,
+    financeFeeCategories: data.financeFeeCategories.length,
+    financeFees: data.financeFees.length,
+    calendars: data.calendars.length,
   };
 
   try {
@@ -351,6 +361,225 @@ export async function loadFoundationData(
       "settings",
       ["id", "schoolId", "scope", "name", "nameDisplay", "description", "value"],
       data.settings.map((r) => [r.id, r.schoolId, r.scope, r.name, r.nameDisplay, r.description, r.value]),
+    );
+
+    // Tier 2 (M24) - see transform.ts's Tier 2 doc comment for what's
+    // covered vs. deliberately deferred to a fast-follow. Insertion order
+    // matches each cluster's FK dependency chain (parent before child).
+    await bulkInsert(
+      connection,
+      "departments",
+      ["id", "schoolId", "type", "name", "shortName", "subjectListing", "blurb", "logoUrl"],
+      data.departments.map((r) => [
+        r.id,
+        r.schoolId,
+        r.type,
+        r.name,
+        r.shortName,
+        r.subjectListing,
+        r.blurb,
+        r.logoUrl,
+      ]),
+    );
+
+    await bulkInsert(
+      connection,
+      "courses",
+      [
+        "id",
+        "schoolId",
+        "schoolYearId",
+        "departmentId",
+        "name",
+        "shortName",
+        "description",
+        "includeInCurriculumMaps",
+        "sequenceNumber",
+      ],
+      data.courses.map((r) => [
+        r.id,
+        r.schoolId,
+        r.schoolYearId,
+        r.departmentId,
+        r.name,
+        r.shortName,
+        r.description,
+        r.includeInCurriculumMaps,
+        r.sequenceNumber,
+      ]),
+    );
+
+    await bulkInsert(
+      connection,
+      "course_classes",
+      [
+        "id",
+        "courseId",
+        "name",
+        "shortName",
+        "reportable",
+        "takesAttendance",
+        "enrolmentMin",
+        "enrolmentMax",
+      ],
+      data.courseClasses.map((r) => [
+        r.id,
+        r.courseId,
+        r.name,
+        r.shortName,
+        r.reportable,
+        r.takesAttendance,
+        r.enrolmentMin,
+        r.enrolmentMax,
+      ]),
+    );
+
+    await bulkInsert(
+      connection,
+      "course_class_people",
+      ["id", "courseClassId", "personId", "role", "dateEnrolled", "dateUnenrolled", "reportable"],
+      data.courseClassPeople.map((r) => [
+        r.id,
+        r.courseClassId,
+        r.personId,
+        r.role,
+        r.dateEnrolled,
+        r.dateUnenrolled,
+        r.reportable,
+      ]),
+    );
+
+    await bulkInsert(
+      connection,
+      "markbook_scales",
+      ["id", "schoolId", "name", "shortName", "description", "active"],
+      // `description` is always null - real Gibbon's gibbonScale has no
+      // equivalent free-text field to migrate.
+      data.scales.map((r) => [r.id, r.schoolId, r.name, r.shortName, null, r.active]),
+    );
+
+    await bulkInsert(
+      connection,
+      "markbook_scale_grades",
+      ["id", "scaleId", "name", "shortName", "value", "sequenceNumber", "lowestAcceptable"],
+      data.scaleGrades.map((r) => [
+        r.id,
+        r.scaleId,
+        r.name,
+        r.shortName,
+        r.value,
+        r.sequenceNumber,
+        r.lowestAcceptable,
+      ]),
+    );
+
+    await bulkInsert(
+      connection,
+      "attendance_codes",
+      [
+        "id",
+        "schoolId",
+        "name",
+        "shortName",
+        "type",
+        "direction",
+        "scope",
+        "active",
+        "reportable",
+        "allowFutureDate",
+        "prefill",
+        "sequenceNumber",
+      ],
+      data.attendanceCodes.map((r) => [
+        r.id,
+        r.schoolId,
+        r.name,
+        r.shortName,
+        r.type,
+        r.direction,
+        r.scope,
+        r.active,
+        r.reportable,
+        r.allowFutureDate,
+        r.prefill,
+        r.sequenceNumber,
+      ]),
+    );
+
+    await bulkInsert(
+      connection,
+      "finance_fee_categories",
+      ["id", "schoolId", "name", "shortName", "description", "active"],
+      data.financeFeeCategories.map((r) => [
+        r.id,
+        r.schoolId,
+        r.name,
+        r.shortName,
+        r.description,
+        r.active,
+      ]),
+    );
+
+    await bulkInsert(
+      connection,
+      "finance_fees",
+      [
+        "id",
+        "schoolYearId",
+        "name",
+        "shortName",
+        "description",
+        "active",
+        "feeCategoryId",
+        "amount",
+      ],
+      data.financeFees.map((r) => [
+        r.id,
+        r.schoolYearId,
+        r.name,
+        r.shortName,
+        r.description,
+        r.active,
+        r.feeCategoryId,
+        r.amount,
+      ]),
+    );
+
+    await bulkInsert(
+      connection,
+      "calendars",
+      [
+        "id",
+        "schoolYearId",
+        "name",
+        "description",
+        "summary",
+        "color",
+        "public",
+        "viewableStaff",
+        "viewableStudents",
+        "viewableParents",
+        "viewableOther",
+        "viewableParticipants",
+        "editableStaff",
+        "sequenceNumber",
+      ],
+      data.calendars.map((r) => [
+        r.id,
+        r.schoolYearId,
+        r.name,
+        r.description,
+        r.summary,
+        r.color,
+        r.public,
+        r.viewableStaff,
+        r.viewableStudents,
+        r.viewableParents,
+        r.viewableOther,
+        r.viewableParticipants,
+        r.editableStaff,
+        r.sequenceNumber,
+      ]),
     );
 
     if (commit) {

@@ -1,12 +1,22 @@
 import mysql from "mysql2/promise";
 import type {
+  GibbonAttendanceCodeRow,
+  GibbonCalendarRow,
+  GibbonCourseClassPersonRow,
+  GibbonCourseClassRow,
+  GibbonCourseRow,
+  GibbonDepartmentRow,
   GibbonFamilyAdultRow,
   GibbonFamilyChildRow,
   GibbonFamilyRow,
+  GibbonFinanceFeeCategoryRow,
+  GibbonFinanceFeeRow,
   GibbonFormGroupRow,
   GibbonHouseRow,
   GibbonPersonRow,
   GibbonRoleRow,
+  GibbonScaleGradeRow,
+  GibbonScaleRow,
   GibbonSchoolYearRow,
   GibbonSettingRow,
   GibbonStaffRow,
@@ -35,6 +45,20 @@ export interface FoundationExtract {
   familyAdults: GibbonFamilyAdultRow[];
   familyChildren: GibbonFamilyChildRow[];
   settings: GibbonSettingRow[];
+
+  // Tier 2 (M24) - a first-pass subset of table sets, one representative
+  // cluster per module; see transform.ts's Tier 2 doc comment for the full
+  // list of what's covered vs. deliberately deferred.
+  departments: GibbonDepartmentRow[];
+  courses: GibbonCourseRow[];
+  courseClasses: GibbonCourseClassRow[];
+  courseClassPeople: GibbonCourseClassPersonRow[];
+  scales: GibbonScaleRow[];
+  scaleGrades: GibbonScaleGradeRow[];
+  attendanceCodes: GibbonAttendanceCodeRow[];
+  financeFeeCategories: GibbonFinanceFeeCategoryRow[];
+  financeFees: GibbonFinanceFeeRow[];
+  calendars: GibbonCalendarRow[];
 }
 
 /**
@@ -73,6 +97,16 @@ export async function extractFoundationData(
       familyAdults,
       familyChildren,
       settings,
+      departments,
+      courses,
+      courseClasses,
+      courseClassPeople,
+      scales,
+      scaleGrades,
+      attendanceCodes,
+      financeFeeCategories,
+      financeFees,
+      calendars,
     ] = await Promise.all([
       selectAll<GibbonSchoolYearRow>(connection, "gibbonSchoolYear"),
       selectAll<GibbonYearGroupRow>(connection, "gibbonYearGroup"),
@@ -86,6 +120,16 @@ export async function extractFoundationData(
       selectAll<GibbonFamilyAdultRow>(connection, "gibbonFamilyAdult"),
       selectAll<GibbonFamilyChildRow>(connection, "gibbonFamilyChild"),
       selectAll<GibbonSettingRow>(connection, "gibbonSetting"),
+      selectAll<GibbonDepartmentRow>(connection, "gibbonDepartment"),
+      selectAll<GibbonCourseRow>(connection, "gibbonCourse"),
+      selectAll<GibbonCourseClassRow>(connection, "gibbonCourseClass"),
+      selectAll<GibbonCourseClassPersonRow>(connection, "gibbonCourseClassPerson"),
+      selectAll<GibbonScaleRow>(connection, "gibbonScale"),
+      selectAll<GibbonScaleGradeRow>(connection, "gibbonScaleGrade"),
+      selectAll<GibbonAttendanceCodeRow>(connection, "gibbonAttendanceCode"),
+      selectAll<GibbonFinanceFeeCategoryRow>(connection, "gibbonFinanceFeeCategory"),
+      selectAll<GibbonFinanceFeeRow>(connection, "gibbonFinanceFee"),
+      selectAll<GibbonCalendarRow>(connection, "gibbonCalendar"),
     ]);
 
     return {
@@ -101,6 +145,16 @@ export async function extractFoundationData(
       familyAdults,
       familyChildren,
       settings,
+      departments,
+      courses,
+      courseClasses,
+      courseClassPeople,
+      scales,
+      scaleGrades,
+      attendanceCodes,
+      financeFeeCategories,
+      financeFees,
+      calendars,
     };
   } finally {
     await connection.end();

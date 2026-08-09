@@ -66,6 +66,22 @@ describe("gibbon-migrator (integration, real data)", () => {
     expect(extract.staff.length).toBeGreaterThan(100);
     expect(extract.studentEnrolments.length).toBeGreaterThan(300);
     expect(extract.families.length).toBeGreaterThan(500);
+
+    // Tier 2 (M24) - real gibbon_demo.sql is confirmed (via direct SQL, not
+    // this migrator) to populate Course/CourseClass/CourseClassPerson/
+    // Department/AttendanceCode/FinanceFeeCategory/Scale (some via
+    // gibbon.sql's own default schema seed, independent of the demo
+    // fixture - e.g. AttendanceCode's 6 rows), but has zero rows in
+    // Calendar/FinanceFee - worth asserting explicitly so a future demo-data
+    // regeneration that silently drops or adds this coverage gets caught.
+    expect(extract.departments.length).toBe(13);
+    expect(extract.courses.length).toBe(126);
+    expect(extract.courseClasses.length).toBe(242);
+    expect(extract.courseClassPeople.length).toBe(3764);
+    expect(extract.attendanceCodes.length).toBe(6);
+    expect(extract.financeFeeCategories.length).toBe(5);
+    expect(extract.scales.length).toBe(14);
+    expect(extract.calendars.length).toBe(0);
   });
 
   it("transforms the real dataset, surfacing Gibbon's own genuine data-quality gaps rather than crashing", async () => {
@@ -98,10 +114,41 @@ describe("gibbon-migrator (integration, real data)", () => {
       "gibbonYearGroupID",
       "gibbonFormGroupID",
       "gibbonFamilyID",
+      // Tier 2 (M24)
+      "gibbonDepartmentID",
+      "gibbonCourseID",
+      "gibbonCourseClassID",
+      "gibbonFinanceFeeCategoryID",
+      "gibbonFinanceFeeID",
+      "gibbonScaleID",
     ]);
     for (const anomaly of anomalies) {
       expect(knownFields.has(anomaly.field)).toBe(true);
     }
+
+    // Tier 2 (M24): proves the full Course -> CourseClass -> CourseClassPerson
+    // chain resolves against real data, not just synthetic unit fixtures.
+    // Confirmed independently via direct SQL: 4 of 242 real gibbonCourseClass
+    // rows reference a gibbonCourseID that doesn't exist in gibbonCourse at
+    // all - the same "zero declared FKs -> expect real orphan findings"
+    // class of gap already documented above for Staff/FamilyAdult, not a
+    // bug in this migrator's chain-drop handling (which is exactly what
+    // correctly drops these 4 rather than crashing load.ts with a raw FK
+    // violation - see resolveCourseClasses'/resolveCourseClassPeople's doc
+    // comments).
+    expect(data.courses.length).toBe(extract.courses.length);
+    const courseClassAnomalies = anomalies.filter((a) => a.entity === "CourseClass");
+    expect(data.courseClasses.length).toBe(
+      extract.courseClasses.length - courseClassAnomalies.length,
+    );
+    const courseClassPersonAnomalies = anomalies.filter(
+      (a) => a.entity === "CourseClassPerson",
+    );
+    expect(data.courseClassPeople.length).toBe(
+      extract.courseClassPeople.length - courseClassPersonAnomalies.length,
+    );
+    expect(data.financeFeeCategories.length).toBe(extract.financeFeeCategories.length);
+    expect(data.attendanceCodes.length).toBe(extract.attendanceCodes.length);
 
     // Every Person is still migrated even though some of their
     // relationships (family, staff profile) may be dropped - erring
@@ -193,5 +240,27 @@ describe("gibbon-migrator (integration, real data)", () => {
       [schoolId],
     );
     expect((credentialRows as Array<{ count: number }>)[0].count).toBe(0);
+
+    // Tier 2 (M24): the real demo Course/CourseClass/CourseClassPerson
+    // chain and AttendanceCode reference data actually landed, queryable
+    // through their real FK chain (not just counted in-memory).
+    const [courseClassPersonRows] = await targetConnection.query(
+      `SELECT COUNT(*) as count FROM \`course_class_people\` ccp
+       INNER JOIN \`course_classes\` cc ON cc.id = ccp.courseClassId
+       INNER JOIN \`courses\` c ON c.id = cc.courseId
+       WHERE c.schoolId = ?`,
+      [schoolId],
+    );
+    expect((courseClassPersonRows as Array<{ count: number }>)[0].count).toBe(
+      data.courseClassPeople.length,
+    );
+
+    const [attendanceCodeRows] = await targetConnection.query(
+      "SELECT COUNT(*) as count FROM `attendance_codes` WHERE `schoolId` = ?",
+      [schoolId],
+    );
+    expect((attendanceCodeRows as Array<{ count: number }>)[0].count).toBe(
+      data.attendanceCodes.length,
+    );
   });
 });

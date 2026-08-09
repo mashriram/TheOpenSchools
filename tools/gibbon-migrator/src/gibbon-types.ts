@@ -152,3 +152,153 @@ export interface GibbonSettingRow {
   description: string;
   value: string;
 }
+
+/**
+ * Tier 2 (M24) row shapes, confirmed the same way as Foundation's above -
+ * against the real `gibbon.sql` schema. Only a first-pass subset of Tier 2
+ * table sets is covered here (one representative cluster per module); see
+ * transform.ts's Tier 2 doc comment for the full list of what's covered vs.
+ * deliberately deferred to a fast-follow.
+ */
+
+/**
+ * A genuine pre-existing Foundation gap this Tier 2 extension surfaced and
+ * fixes directly: Department (M3) was never wired into the migrator at
+ * all, even though Course.departmentId needs it. Migrated here rather than
+ * left as another dropped/nulled-reference anomaly.
+ */
+export interface GibbonDepartmentRow {
+  gibbonDepartmentID: string;
+  type: 'Learning Area' | 'Administration';
+  name: string;
+  nameShort: string;
+  subjectListing: string;
+  blurb: string;
+  logo: string;
+}
+
+export interface GibbonCourseRow {
+  gibbonCourseID: string;
+  gibbonSchoolYearID: string;
+  gibbonDepartmentID: string | null;
+  name: string;
+  nameShort: string;
+  description: string;
+  map: 'Y' | 'N';
+  orderBy: number;
+}
+
+export interface GibbonCourseClassRow {
+  gibbonCourseClassID: string;
+  gibbonCourseID: string;
+  name: string;
+  nameShort: string;
+  reportable: 'Y' | 'N';
+  attendance: 'Y' | 'N';
+  enrolmentMin: number | null;
+  enrolmentMax: number | null;
+}
+
+export interface GibbonCourseClassPersonRow {
+  gibbonCourseClassPersonID: string;
+  gibbonCourseClassID: string;
+  gibbonPersonID: string;
+  role:
+    | 'Student'
+    | 'Teacher'
+    | 'Assistant'
+    | 'Technician'
+    | 'Parent'
+    | 'Student - Left'
+    | 'Teacher - Left';
+  dateEnrolled: string | null;
+  dateUnenrolled: string | null;
+  reportable: 'Y' | 'N';
+}
+
+export interface GibbonScaleRow {
+  gibbonScaleID: string;
+  name: string;
+  nameShort: string;
+  /** The sequence number of the lowest acceptable grade in this scale - used to resolve ScaleGrade.lowestAcceptable during transform. */
+  lowestAcceptable: string | null;
+  active: 'Y' | 'N';
+}
+
+export interface GibbonScaleGradeRow {
+  gibbonScaleGradeID: string;
+  gibbonScaleID: string;
+  value: string;
+  descriptor: string;
+  sequenceNumber: number;
+}
+
+export interface GibbonAttendanceCodeRow {
+  gibbonAttendanceCodeID: string;
+  name: string;
+  nameShort: string;
+  type: 'Core' | 'Additional';
+  direction: 'In' | 'Out';
+  scope: 'Onsite' | 'Onsite - Late' | 'Offsite' | 'Offsite - Left' | 'Offsite - Late';
+  active: 'Y' | 'N';
+  reportable: 'Y' | 'N';
+  future: 'Y' | 'N';
+  prefill: 'Y' | 'N';
+  sequenceNumber: number;
+}
+
+// Behaviour, Student Alerts (AlertType/Alert), and Individual Needs
+// (IN/INDescriptor/INPersonDescriptor) are a DELIBERATE fast-follow, not an
+// oversight: their target entities have Tier C columns
+// (Behaviour.comment/followup, Alert.comment/notesStatus,
+// IndividualNeed.strategies/targets/notes) that TypeORM's
+// `encryptedColumnTransformer` encrypts transparently at the entity layer.
+// This migrator writes through raw parameterized SQL (see load.ts's doc
+// comment for why - avoiding a cross-package dependency on apps/api's
+// TypeORM entities), which never goes through that transformer. Migrating
+// these fields here would mean either (a) inserting them as unencrypted
+// plaintext into a column the live application expects to always be
+// encrypted, or (b) duplicating AES-256-GCM encryption logic into this
+// separate package, risking silent desync from the real implementation on
+// a future key-rotation or algorithm change. Given this project's explicit
+// "be very safe with data" brief, neither option is acceptable to ship
+// casually - these three modules wait for a follow-up that either shares
+// the encryption module properly (e.g. via @purpleschools/shared-types) or
+// re-encrypts through a real application-layer import step instead of a
+// raw-SQL bulk insert.
+
+export interface GibbonFinanceFeeCategoryRow {
+  gibbonFinanceFeeCategoryID: string;
+  name: string;
+  nameShort: string;
+  description: string;
+  active: 'Y' | 'N';
+}
+
+export interface GibbonFinanceFeeRow {
+  gibbonFinanceFeeID: string;
+  gibbonSchoolYearID: string;
+  name: string;
+  nameShort: string;
+  description: string;
+  active: 'Y' | 'N';
+  gibbonFinanceFeeCategoryID: string;
+  fee: string;
+}
+
+export interface GibbonCalendarRow {
+  gibbonCalendarID: string;
+  gibbonSchoolYearID: string;
+  name: string;
+  description: string | null;
+  summary: string | null;
+  color: string | null;
+  public: 'Y' | 'N';
+  viewableStaff: 'Y' | 'N';
+  viewableStudents: 'Y' | 'N';
+  viewableParents: 'Y' | 'N';
+  viewableOther: 'Y' | 'N';
+  viewableParticipants: 'Y' | 'N' | null;
+  editableStaff: 'Y' | 'N' | null;
+  sequenceNumber: number;
+}
